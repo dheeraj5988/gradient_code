@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   title: { default: "Gradient Code — Practical courses, projects and internships", template: "%s | Gradient Code" },
   description: "Industry-oriented courses and programs that help students build practical technical skills and prove them through projects and assessments.",
   alternates: { canonical: "/" },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
   openGraph: { siteName: "Gradient Code", type: "website", locale: "en_IN" },
   twitter: { card: "summary_large_image" },
 };

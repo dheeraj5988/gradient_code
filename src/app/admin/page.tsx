@@ -33,7 +33,7 @@ export default async function AdminPage() {
       <header className="border-b border-border bg-background"><div className="container-page flex h-16 items-center gap-3"><Logo /><Badge>Admin</Badge></div></header>
       <main id="main" className="container-page py-8 sm:py-10">
         <h1 className="text-2xl font-bold sm:text-3xl">Admin</h1>
-        <p className="mt-1 max-w-2xl text-muted-foreground">The new admin panel is built in Phase 9. Until then, continue managing courses and enrollments in the existing Lovable admin.</p>
+        <p className="mt-1 max-w-2xl text-muted-foreground">The new admin panel is scheduled for Phase 9. Until then, manage courses, users, and enrollments via the Supabase dashboard.</p>
         {/* TODO(antigravity, Phase 9): real admin shell + DataTable pages for each section */}
         <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {SECTIONS.map((s) => (
