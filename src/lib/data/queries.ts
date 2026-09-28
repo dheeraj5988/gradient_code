@@ -80,9 +80,10 @@ const COURSE_SELECT = "*, instructor:instructors(slug,name,headline,avatar_url)"
 async function allPublishedCourses(): Promise<Course[]> {
   if (IS_DEMO) return DEMO_COURSES;
   const supabase = await createClient();
-  let { data, error } = await supabase.from("courses").select(COURSE_SELECT).eq("is_published", true);
+  // Demo/test courses (is_demo) are never part of the public catalog, even if published.
+  let { data, error } = await supabase.from("courses").select(COURSE_SELECT).eq("is_published", true).eq("is_demo", false);
   if (error) {
-    // Marketplace migration not applied yet — fall back to the plain table.
+    // Older schema (Phase 3 / marketplace migrations not applied yet) — fall back to the plain table.
     ({ data, error } = await supabase.from("courses").select("*").eq("is_published", true));
   }
   if (error) throw error;
