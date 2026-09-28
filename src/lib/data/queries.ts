@@ -40,26 +40,39 @@ function mapCourse(row: any): Course {
   };
 }
 
+const DURATION: Record<string, (h: number) => boolean> = {
+  short: (h) => h > 0 && h < 5,
+  medium: (h) => h >= 5 && h <= 20,
+  long: (h) => h > 20,
+};
+
 function applyFilters(list: Course[], f: CourseFilters) {
   let out = list;
   if (f.q) {
     const q = f.q.toLowerCase();
     out = out.filter((c) =>
-      [c.title, c.subtitle, c.track, ...c.skills].join(" ").toLowerCase().includes(q),
+      [c.title, c.subtitle, c.track, c.instructor?.name, ...c.skills].join(" ").toLowerCase().includes(q),
     );
   }
   if (f.track) out = out.filter((c) => c.track === f.track);
   if (f.level) out = out.filter((c) => c.level === f.level);
+  if (f.language) out = out.filter((c) => c.language === f.language);
   if (f.price === "free") out = out.filter((c) => c.price === 0);
   if (f.price === "paid") out = out.filter((c) => c.price > 0);
+  if (f.duration && DURATION[f.duration]) out = out.filter((c) => DURATION[f.duration!](c.includes.hours ?? 0));
+  if (f.rating) out = out.filter((c) => c.rating_count > 0 && c.rating_avg >= Number(f.rating));
+  if (f.certificate) out = out.filter((c) => c.includes.certificate !== false);
+  if (f.internship) out = out.filter((c) => c.has_internship);
+  if (f.projects) out = out.filter((c) => (c.includes.projects ?? 0) > 0);
+  if (f.format === "short") out = out.filter((c) => c.is_crash_course);
   const sorters: Record<string, (a: Course, b: Course) => number> = {
     popular: (a, b) => b.students_count - a.students_count || Number(b.is_featured) - Number(a.is_featured),
-    rating: (a, b) => b.rating_avg - a.rating_avg,
+    rating: (a, b) => b.rating_avg - a.rating_avg || b.rating_count - a.rating_count,
     newest: (a, b) => b.updated_at.localeCompare(a.updated_at),
     "price-low": (a, b) => a.price - b.price,
     "price-high": (a, b) => b.price - a.price,
   };
-  return [...out].sort(sorters[f.sort ?? "popular"]);
+  return [...out].sort(sorters[f.sort ?? "popular"] ?? sorters.popular);
 }
 
 const COURSE_SELECT = "*, instructor:instructors(slug,name,headline,avatar_url)";
@@ -83,6 +96,33 @@ export async function getCourses(filters: CourseFilters = {}) {
 export async function getFeaturedCourses(limit = 6) {
   const all = await allPublishedCourses();
   return [...all].sort((a, b) => Number(b.is_featured) - Number(a.is_featured)).slice(0, limit);
+}
+
+/** Distinct values available for catalog filters (derived from real course data). */
+export async function getFacets() {
+  const all = await allPublishedCourses();
+  const count = (key: (c: Course) => string) => {
+    const m = new Map<string, number>();
+    all.forEach((c) => m.set(key(c), (m.get(key(c)) ?? 0) + 1));
+    return [...m.entries()].map(([name, n]) => ({ name, count: n })).sort((a, b) => b.count - a.count);
+  };
+  return { tracks: count((c) => c.track), levels: count((c) => c.level), languages: count((c) => c.language), total: all.length };
+}
+
+export async function getRelatedCourses(course: Course, limit = 3) {
+  const all = await allPublishedCourses();
+  return all
+    .filter((c) => c.id !== course.id)
+    .sort((a, b) => Number(b.track === course.track) - Number(a.track === course.track))
+    .slice(0, limit);
+}
+
+export async function getInstructors(): Promise<Instructor[]> {
+  if (IS_DEMO) return DEMO_INSTRUCTORS;
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("instructors").select("*").order("name");
+  if (error) return [];
+  return (data ?? []) as Instructor[];
 }
 
 export async function getTracks() {
@@ -230,4 +270,55 @@ export async function getPlayerCurriculum(courseId: string, userId: string | nul
     modules: (modules ?? []).map((m) => ({ ...m, lessons: (lessons ?? []).filter((l: any) => l.module_id === m.id) })) as Module[],
     completed: new Set((done ?? []).map((d: any) => d.lesson_id as string)),
   };
+}
+
+/* ---------- Learner summary (dashboard) — every number comes from real rows ---------- */
+
+export type LearnerSummary = {
+  certificates: number;
+  profile: { percent: number; missing: string[] };
+  applications: number;
+};
+
+export async function getLearnerSummary(userId: string | null): Promise<LearnerSummary> {
+  if (IS_DEMO || !userId) {
+    return { certificates: 0, profile: { percent: 40, missing: ["Phone number", "Profile photo", "Short bio"] }, applications: 0 };
+  }
+  const supabase = await createClient();
+  const [{ count: certs }, { data: profile }, apps] = await Promise.all([
+    supabase.from("certificates").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabase.from("profiles").select("full_name,email,phone,avatar_url,bio").eq("id", userId).maybeSingle(),
+    supabase.from("internship_applications").select("id", { count: "exact", head: true }).eq("user_id", userId),
+  ]);
+  const fields: [string, unknown][] = [
+    ["Full name", profile?.full_name],
+    ["Email", profile?.email],
+    ["Phone number", profile?.phone],
+    ["Profile photo", profile?.avatar_url],
+    ["Short bio", profile?.bio],
+  ];
+  const missing = fields.filter(([, v]) => !v).map(([k]) => k);
+  return {
+    certificates: certs ?? 0,
+    profile: { percent: Math.round(((fields.length - missing.length) / fields.length) * 100), missing },
+    applications: apps.error ? 0 : (apps.count ?? 0),
+  };
+}
+
+/** Next unfinished lesson per enrolled course, for "Up next". */
+export async function getNextLessons(userId: string | null, courses: MyCourse[]) {
+  const out: { course: MyCourse; lessonId: string; lessonTitle: string; duration: number }[] = [];
+  for (const c of courses.filter((x) => x.progress < 100).slice(0, 4)) {
+    const { modules, completed } = await getPlayerCurriculum(c.id, userId);
+    const next = modules.flatMap((m) => m.lessons).find((l) => !completed.has(l.id));
+    if (next) out.push({ course: c, lessonId: next.id, lessonTitle: next.title, duration: next.duration_seconds });
+  }
+  return out;
+}
+
+export async function isWishlisted(userId: string | null, courseId: string) {
+  if (IS_DEMO || !userId) return false;
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("wishlist").select("course_id").eq("user_id", userId).eq("course_id", courseId).maybeSingle();
+  return !error && !!data;
 }

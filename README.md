@@ -19,4 +19,9 @@ Run only the NEW file in the Supabase SQL editor:
 Import the GitHub repo in Vercel, add the env vars from `.env.example`, deploy.
 In Supabase → Authentication → URL configuration add your Vercel URL + `/auth/callback`.
 
-See `AGENTS.md` (rules for AI agents), `docs/ROADMAP.md` (phases), `docs/RESEARCH.md` (platform research).
+## Docs
+- `docs/PRODUCT_SPEC.md` — source of truth
+- `docs/AUDIT.md` — current state
+- `docs/ROADMAP.md` — phases
+- `AGENTS.md` — rules for AI coding agents
+- `docs/RESEARCH.md` — platform research

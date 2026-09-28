@@ -32,7 +32,8 @@ export type Course = {
   requirements: string[];
   target_audience: string[];
   skills: string[];
-  includes: { hours?: number; articles?: number; resources?: number; certificate?: boolean };
+  /** Stored in courses.includes (jsonb). projects = number of hands-on projects. */
+  includes: { hours?: number; articles?: number; resources?: number; projects?: number; certificate?: boolean };
   rating_avg: number;
   rating_count: number;
   students_count: number;
@@ -91,6 +92,13 @@ export type CourseFilters = {
   q?: string;
   track?: string;
   level?: string;
+  language?: string;
   price?: "free" | "paid";
+  duration?: "short" | "medium" | "long";
+  rating?: "4" | "4.5";
+  certificate?: "1";
+  internship?: "1";
+  projects?: "1";
+  format?: "short";
   sort?: "popular" | "rating" | "newest" | "price-low" | "price-high";
 };

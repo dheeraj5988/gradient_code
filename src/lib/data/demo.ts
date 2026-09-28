@@ -83,7 +83,7 @@ export const DEMO_COURSES: Course[] = [
       "Web developers upgrading to ML integration",
     ],
     skills: ["Python", "Django", "HTML", "CSS3", "JavaScript", "Bootstrap", "Git", "ML", "CNN", "AWS"],
-    includes: { hours: 37, articles: 85, resources: 40, certificate: true },
+    includes: { hours: 37, articles: 85, resources: 40, projects: 6, certificate: true },
     instructor: faculty,
   },
   {
@@ -111,7 +111,7 @@ export const DEMO_COURSES: Course[] = [
     requirements: ["Basic computer skills", "Curiosity about data"],
     target_audience: ["College students", "Working professionals switching to data roles"],
     skills: ["Python", "NumPy", "Pandas", "Matplotlib", "scikit-learn", "ML"],
-    includes: { hours: 30, articles: 12, resources: 20, certificate: true },
+    includes: { hours: 30, articles: 12, resources: 20, projects: 3, certificate: true },
     instructor: faculty,
   },
   {
@@ -140,7 +140,7 @@ export const DEMO_COURSES: Course[] = [
     requirements: ["No AI background needed", "Basic comfort with a computer"],
     target_audience: ["Developers new to AI", "Professionals who want to use AI seriously"],
     skills: ["LLMs", "Prompting", "RAG", "Agents", "MCP", "AWS Bedrock", "Langflow"],
-    includes: { hours: 12, articles: 10, resources: 8, certificate: true },
+    includes: { hours: 12, articles: 10, resources: 8, projects: 2, certificate: true },
     instructor: himanshu,
   },
   {
@@ -159,7 +159,7 @@ export const DEMO_COURSES: Course[] = [
     requirements: ["Basic JavaScript"],
     target_audience: ["Web developers new to React"],
     skills: ["React", "Next.js", "Vercel"],
-    includes: { hours: 6, resources: 5, certificate: true },
+    includes: { hours: 6, resources: 5, projects: 1, certificate: true },
     instructor: faculty,
   },
   {

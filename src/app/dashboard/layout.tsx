@@ -1,40 +1,39 @@
-import Link from "next/link";
-import { Award, BookOpen, Briefcase, Compass, LayoutDashboard, LogOut, MessageCircle } from "lucide-react";
+import type { Metadata } from "next";
+import { LogOut } from "lucide-react";
 import { Logo } from "@/components/brand";
+import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { getUser } from "@/lib/supabase/server";
 
-const NAV = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/courses", label: "My courses", icon: BookOpen },
-  { href: "/dashboard/certificates", label: "Certificates", icon: Award },
-  { href: "/dashboard/applications", label: "Internships", icon: Briefcase },
-  { href: "/courses", label: "Explore courses", icon: Compass },
-  // TODO(antigravity): forum + support pages (tables forum_questions/forum_answers/messages already exist)
-  { href: "/dashboard", label: "Doubt forum (soon)", icon: MessageCircle },
-];
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
   const name = (user?.user_metadata?.full_name as string) || user?.email || "Demo learner";
+  const initials = name.split(/[\s@]/).map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
   return (
-    <div className="min-h-screen md:grid md:grid-cols-[250px_1fr]">
-      <aside className="border-b border-border bg-surface md:sticky md:top-0 md:h-screen md:border-r md:border-b-0">
-        <div className="flex h-16 items-center px-5"><Logo /></div>
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:pb-0">
-          {NAV.map((n) => (
-            <Link key={n.label} href={n.href} className="flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
-              <n.icon className="h-4 w-4" />{n.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="absolute bottom-0 hidden w-[250px] border-t border-border p-4 md:block">
-          <p className="truncate text-sm font-medium">{name}</p>
-          <form action="/auth/signout" method="post">
-            <button className="mt-2 flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"><LogOut className="h-3.5 w-3.5" />Sign out</button>
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[248px_1fr]">
+      <aside className="border-b border-border bg-background lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0">
+        <div className="flex h-16 items-center justify-between px-5">
+          <Logo />
+          <form action="/auth/signout" method="post" className="lg:hidden">
+            <button className="text-xs font-medium text-muted-foreground hover:text-foreground">Sign out</button>
           </form>
         </div>
+        <SidebarNav />
+        <div className="mt-auto hidden border-t border-border p-4 lg:block">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">{initials}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{name}</p>
+              <p className="text-xs text-muted-foreground">Learner</p>
+            </div>
+            <form action="/auth/signout" method="post">
+              <button aria-label="Sign out" className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-surface-2 hover:text-foreground"><LogOut className="h-4 w-4" /></button>
+            </form>
+          </div>
+        </div>
       </aside>
-      <main className="p-5 md:p-10">{children}</main>
+      <main id="main" className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">{children}</main>
     </div>
   );
 }

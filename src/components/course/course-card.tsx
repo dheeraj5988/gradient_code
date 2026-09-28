@@ -1,45 +1,51 @@
 import Link from "next/link";
-import { Briefcase, Clock, Zap } from "lucide-react";
+import { Award, Briefcase, Clock, FolderGit2, Zap } from "lucide-react";
 import type { Course } from "@/lib/data/types";
 import { discountPercent, formatPrice } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Rating } from "@/components/rating";
 import { CourseThumb } from "@/components/course-thumb";
 
-export function CourseCard({ course }: { course: Course }) {
+export function CourseCard({ course, priority }: { course: Course; priority?: boolean }) {
   const off = discountPercent(course.price, course.mrp);
+  const meta = [
+    course.includes.hours ? { icon: Clock, text: `${course.includes.hours}h` } : null,
+    course.includes.projects ? { icon: FolderGit2, text: `${course.includes.projects} project${course.includes.projects > 1 ? "s" : ""}` } : null,
+  ].filter(Boolean) as { icon: typeof Clock; text: string }[];
+
   return (
-    <Link
-      href={`/courses/${course.slug}`}
-      className="gradient-border group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-1"
-    >
-      <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} />
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="flex flex-wrap gap-1.5">
-          <Badge>{course.level}</Badge>
-          {course.is_crash_course ? <Badge tone="warning"><Zap className="h-3 w-3" />Crash</Badge> : null}
-          {course.has_internship ? <Badge tone="success"><Briefcase className="h-3 w-3" />Internship</Badge> : null}
-        </div>
-        <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug group-hover:text-brand-pink">
-          {course.title}
+    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-card">
+      <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} priority={priority} />
+      <div className="flex flex-1 flex-col p-4">
+        <p className="text-xs font-medium text-primary">{course.track}</p>
+        <h3 className="mt-1 line-clamp-2 text-[15px] leading-snug font-semibold text-foreground">
+          <Link href={`/courses/${course.slug}`} className="after:absolute after:inset-0 focus-visible:outline-none group-hover:text-primary">
+            {course.title}
+          </Link>
         </h3>
-        {course.instructor ? <p className="text-xs text-muted-foreground">{course.instructor.name}</p> : null}
-        <Rating value={course.rating_avg} count={course.rating_count} />
-        {course.includes.hours ? (
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" /> {course.includes.hours} hours · {course.language}
-          </p>
-        ) : null}
-        <div className="mt-auto flex items-baseline gap-2 pt-2">
+        {course.instructor ? <p className="mt-1 truncate text-xs text-muted-foreground">{course.instructor.name}</p> : null}
+        <Rating value={course.rating_avg} count={course.rating_count} className="mt-2" />
+        <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span>{course.level}</span>
+          {meta.map((m) => (
+            <span key={m.text} className="inline-flex items-center gap-1"><m.icon className="h-3.5 w-3.5" aria-hidden />{m.text}</span>
+          ))}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {course.includes.certificate !== false ? <Badge><Award className="h-3 w-3" aria-hidden />Certificate</Badge> : null}
+          {course.has_internship ? <Badge tone="success"><Briefcase className="h-3 w-3" aria-hidden />Internship pathway</Badge> : null}
+          {course.is_crash_course ? <Badge tone="warning"><Zap className="h-3 w-3" aria-hidden />Short course</Badge> : null}
+        </div>
+        <div className="mt-auto flex items-baseline gap-2 pt-4">
           <span className="text-lg font-bold">{formatPrice(course.price)}</span>
           {off ? (
             <>
-              <span className="text-sm text-muted-foreground line-through">{formatPrice(course.mrp!)}</span>
+              <span className="text-sm text-subtle-foreground line-through">{formatPrice(course.mrp!)}</span>
               <span className="text-xs font-semibold text-success">{off}% off</span>
             </>
           ) : null}
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

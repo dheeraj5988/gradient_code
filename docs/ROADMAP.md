@@ -1,36 +1,16 @@
-# Roadmap — status of the rebuild
+# Roadmap
 
-Legend: ✅ done in starter · ⏳ to do · 🔧 partially done
+| Phase | Scope | Status |
+|---|---|---|
+| 0 | Next.js starter, Supabase SSR, demo mode, marketplace migration | ✅ |
+| 1 | Product spec, audit, light professional design system, redesign of all existing pages | ✅ |
+| 2 | Learning portal (`/learn/[slug]` sections: overview, lessons, practice, quizzes, projects, resources, notes, interview, certificate, internship) — DB-driven navigation, progress engine | ⏳ next |
+| 3 | Practice engine (topics, questions, attempts, saved, difficulty breakdown, planner) | ⏳ |
+| 4 | Projects, resources, notes, interview prep | ⏳ |
+| 5 | Assessments + certificate policy/eligibility + issuance + `/verify/[id]` | ⏳ |
+| 6 | Internship policy/eligibility, applications, tracker, learner profile | ⏳ |
+| 7 | Razorpay payments + server-side enrollment | ⏳ |
+| 8 | Admin panel | ⏳ |
+| 9 | Analytics, SEO, performance, accessibility audit, final ZIP | ⏳ |
 
-## Phase 0 — Starter (DONE, this zip) ✅
-Next.js 15 + Tailwind v4 + Supabase SSR, design system ported from the old site, demo-data mode,
-home, catalog with filters, course detail (Udemy layout + JSON-LD), instructor page, internships list/detail,
-pricing, login/signup/Google, auth callback, middleware protection, dashboard, my courses, lesson player
-with mark-complete, checkout UI, admin gate, new migration `20260928120000_marketplace_extensions.sql`.
-
-## Phase 1 — Connect & deploy ⏳
-Push to GitHub, connect Supabase, run the new migration, deploy on Vercel, set Supabase auth redirect URLs.
-
-## Phase 2 — Content & course page completion ⏳
-Fill new course columns for the 3 real courses; instructors rows; free-preview video server fetch;
-instructor block + FAQ on course page; review form + rating histogram; wishlist button;
-forgot/reset password; About/Contact/Terms/Privacy/Refund/Careers pages ported from old site.
-
-## Phase 3 — Payments ⏳
-Razorpay order + verify + webhook, coupon validation, free-course self-enroll, order history, invoice email.
-
-## Phase 4 — Learning experience ⏳
-Player tabs (Notes via lesson_notes, Resources, Q&A forum, Quiz), auto-complete at 90% watched where possible,
-certificates auto-issue at 100%, PDF certificate, public /verify/[number], LinkedIn add-to-profile.
-
-## Phase 5 — Admin panel ⏳
-Courses CRUD + curriculum builder (modules/lessons drag order, Drive link import), students & manual enrollment,
-orders & refunds, coupons, instructors, internships + applicant pipeline, review moderation, support inbox.
-
-## Phase 6 — Internships & career tracks ⏳
-Apply form with resume upload (Supabase Storage), status tracking, course-completion gate,
-career-track bundles, email notifications.
-
-## Phase 7 — Polish & launch ⏳
-SEO (sitemap, robots, OG images), analytics (Vercel Analytics / GA4), accessibility audit,
-Lighthouse ≥ 90, error pages, loading skeletons, custom domain.
+Details for each phase: `docs/PRODUCT_SPEC.md`. Current state: `docs/AUDIT.md`.

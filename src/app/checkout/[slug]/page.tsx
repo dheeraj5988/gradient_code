@@ -1,55 +1,73 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Lock, ShieldCheck } from "lucide-react";
+import { Award, Infinity as InfinityIcon, Lock, RefreshCw, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Label } from "@/components/ui/input";
 import { CourseThumb } from "@/components/course-thumb";
 import { getCourseBySlug } from "@/lib/data/queries";
 import { discountPercent, formatPrice } from "@/lib/utils";
 
-export const metadata = { title: "Checkout" };
+export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
 export default async function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
   const course = await getCourseBySlug((await params).slug);
   if (!course) notFound();
   const off = discountPercent(course.price, course.mrp);
-  const gst = 0; // TODO(antigravity): decide whether prices are GST-inclusive; show breakdown on invoice
   return (
-    <div className="min-h-screen">
-      <header className="flex h-16 items-center justify-between border-b border-border px-6">
-        <Logo />
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><Lock className="h-3.5 w-3.5" />Secure checkout</span>
-      </header>
-      <div className="mx-auto grid max-w-5xl gap-10 px-4 py-12 md:grid-cols-[1fr_380px]">
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold">Checkout</h1>
-          <div className="flex gap-4 rounded-2xl border border-border p-4">
-            <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} className="w-40 shrink-0 rounded-xl" />
-            <div>
-              <p className="font-semibold">{course.title}</p>
-              <p className="text-sm text-muted-foreground">{course.instructor?.name}</p>
-              <p className="mt-1 text-sm">{course.access_policy === "lifetime" ? "Lifetime access" : `${course.access_days} days access`}</p>
-            </div>
-          </div>
-          <form className="flex gap-2">
-            <input name="coupon" placeholder="Coupon code" className="h-11 flex-1 rounded-xl border border-border bg-surface px-4 text-sm uppercase" />
-            <Button variant="outline" type="button">Apply</Button>
-            {/* TODO(antigravity): validate coupon via server action using `coupons` table */}
-          </form>
+    <div className="min-h-screen bg-surface">
+      <header className="border-b border-border bg-background">
+        <div className="container-page flex h-16 items-center justify-between">
+          <Logo />
+          <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Lock className="h-3.5 w-3.5" aria-hidden />Secure checkout</span>
         </div>
-        <aside className="h-fit space-y-4 rounded-2xl border border-border bg-card p-6">
-          <h2 className="font-semibold">Order summary</h2>
-          <dl className="space-y-2 text-sm">
-            {course.mrp ? <div className="flex justify-between text-muted-foreground"><dt>Original price</dt><dd className="line-through">{formatPrice(course.mrp)}</dd></div> : null}
-            {off ? <div className="flex justify-between text-success"><dt>Discount ({off}%)</dt><dd>-{formatPrice(course.mrp! - course.price)}</dd></div> : null}
-            <div className="flex justify-between border-t border-border pt-3 text-base font-bold"><dt>Total</dt><dd>{formatPrice(course.price + gst)}</dd></div>
-          </dl>
-          {/* TODO(antigravity): client component → POST /api/razorpay/order → open Razorpay Checkout → POST /api/razorpay/verify → enroll */}
-          <Button size="lg" className="w-full" disabled>Pay {formatPrice(course.price)} (coming soon)</Button>
-          <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" />UPI, cards, netbanking via Razorpay</p>
-          <p className="text-center text-xs text-muted-foreground">By paying you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/refund" className="underline">Refund policy</Link>.</p>
-        </aside>
-      </div>
+      </header>
+      <main id="main" className="container-page py-8 sm:py-10">
+        <Breadcrumbs items={[{ label: "Courses", href: "/courses" }, { label: course.title, href: `/courses/${course.slug}` }, { label: "Checkout" }]} />
+        <h1 className="mt-4 text-2xl font-bold sm:text-3xl">Checkout</h1>
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
+          <div className="space-y-6">
+            <section className="rounded-xl border border-border bg-card p-5">
+              <h2 className="mb-4 text-sm font-semibold">Order details</h2>
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} className="w-full shrink-0 rounded-lg sm:w-44" />
+                <div className="min-w-0">
+                  <p className="font-semibold">{course.title}</p>
+                  {course.instructor ? <p className="text-sm text-muted-foreground">{course.instructor.name}</p> : null}
+                  <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex items-center gap-2">{course.access_policy === "lifetime" ? <InfinityIcon className="h-4 w-4" aria-hidden /> : <RefreshCw className="h-4 w-4" aria-hidden />}{course.access_policy === "lifetime" ? "Lifetime access" : `${course.access_days} days of access`}</li>
+                    {course.includes.certificate !== false ? <li className="flex items-center gap-2"><Award className="h-4 w-4" aria-hidden />Certificate on meeting requirements</li> : null}
+                  </ul>
+                </div>
+              </div>
+            </section>
+            <section className="rounded-xl border border-border bg-card p-5">
+              <Label htmlFor="coupon">Have a coupon?</Label>
+              <div className="flex gap-2">
+                <input id="coupon" name="coupon" placeholder="Enter code" className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm uppercase focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                <Button variant="outline" type="button" disabled>Apply</Button>
+              </div>
+              {/* TODO(antigravity, Phase 8): validate coupon server-side against `coupons` */}
+            </section>
+          </div>
+          <aside>
+            <div className="space-y-4 rounded-xl border border-border bg-card p-5 lg:sticky lg:top-6">
+              <h2 className="text-sm font-semibold">Order summary</h2>
+              <dl className="space-y-2.5 text-sm">
+                {off ? <div className="flex justify-between text-muted-foreground"><dt>Original price</dt><dd className="tabular-nums line-through">{formatPrice(course.mrp!)}</dd></div> : null}
+                {off ? <div className="flex justify-between text-success"><dt>Discount ({off}%)</dt><dd className="tabular-nums">−{formatPrice(course.mrp! - course.price)}</dd></div> : null}
+                <div className="flex justify-between border-t border-border pt-3 text-base font-bold"><dt>Total</dt><dd className="tabular-nums">{formatPrice(course.price)}</dd></div>
+              </dl>
+              {/* TODO(antigravity, Phase 8): Razorpay order → checkout → server verification → enrollment */}
+              <Button size="lg" className="w-full" disabled>Payments launching soon</Button>
+              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" aria-hidden />UPI, cards and netbanking via Razorpay</p>
+              <p className="text-center text-xs text-muted-foreground">By purchasing you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/refund" className="underline">Refund policy</Link>.</p>
+            </div>
+          </aside>
+        </div>
+      </main>
     </div>
   );
 }

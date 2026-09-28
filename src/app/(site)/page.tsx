@@ -1,191 +1,280 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Award, BadgeCheck, Briefcase, Code2, Hammer, PlayCircle, Search, Users } from "lucide-react";
-import { Blobs, Eyebrow, SectionHeading } from "@/components/brand";
+import { ArrowRight, Award, BadgeCheck, BarChart3, BookOpen, Briefcase, Calendar, ChevronRight, Cloud, Code2, FolderGit2, Layers, MapPin, PenTool, Search, ShieldCheck, BrainCircuit } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
+import { Accordion, AccordionItem } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { SectionHeader } from "@/components/ui/section";
 import { CourseCard } from "@/components/course/course-card";
-import { getFeaturedCourses, getInternships, getTracks } from "@/lib/data/queries";
+import { getFeaturedCourses, getInstructors, getInternships, getTracks } from "@/lib/data/queries";
+import { CERTIFICATE_POINTS, FAQS, HOW_IT_WORKS } from "@/lib/content/site";
 
 export const revalidate = 300;
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
-const STEPS = [
-  { icon: Search, title: "Pick a track", body: "Choose a career path — full stack, data science, AI or cloud." },
-  { icon: PlayCircle, title: "Learn by doing", body: "Short video lessons, notes, quizzes and downloadable code." },
-  { icon: Hammer, title: "Ship projects", body: "Build portfolio projects reviewed by mentors." },
-  { icon: Briefcase, title: "Get certified & hired", body: "Earn a verifiable certificate and unlock internships." },
-];
-
-const OUTCOMES = [
-  { value: "Project-first", label: "every course ends in a portfolio build" },
-  { value: "Lifetime", label: "access on most programs" },
-  { value: "Verifiable", label: "certificates with a public ID" },
-  { value: "Internships", label: "unlocked by completing courses" },
-];
+const TRACK_ICONS: Record<string, typeof Layers> = {
+  "Full Stack Development": Layers,
+  "Data Science & AI": BrainCircuit,
+  "Data Analytics": BarChart3,
+  "Cloud & DevOps": Cloud,
+  Cybersecurity: ShieldCheck,
+  "UI/UX & Product Design": PenTool,
+};
 
 export default async function HomePage() {
-  const [courses, tracks, internships] = await Promise.all([getFeaturedCourses(6), getTracks(), getInternships()]);
+  const [courses, tracks, internships, instructors] = await Promise.all([getFeaturedCourses(8), getTracks(), getInternships(), getInstructors()]);
+  const withProjects = courses.filter((c) => (c.includes.projects ?? 0) > 0);
+
   return (
     <>
-      {/* HERO — Coursera-style: search first, then proof */}
-      <section className="relative overflow-hidden">
-        <Blobs />
-        <div className="grid-bg absolute inset-0" />
-        <div className="container-page relative grid gap-12 py-20 lg:grid-cols-[1.15fr_1fr] lg:py-28">
-          <div className="space-y-7">
-            <Eyebrow>Courses · Projects · Internships</Eyebrow>
-            <h1 className="text-4xl font-bold leading-[1.05] text-balance sm:text-6xl">
-              Learn skills that <span className="gradient-text">actually ship.</span>
+      {/* 1. HERO */}
+      <section className="border-b border-border bg-surface">
+        <div className="container-page grid gap-12 py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:py-24">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[56px] lg:leading-[1.08]">
+              Learn practical skills. Build real projects. Get certified.
             </h1>
-            <p className="max-w-xl text-lg text-muted-foreground">
-              Industry-led courses in full stack, data science and AI — with hands-on projects, verifiable certificates and internships for top learners.
+            <p className="mt-5 max-w-xl text-lg text-muted-foreground">
+              Industry-oriented courses and programs that help you develop practical technical skills — and demonstrate them through projects and assessments.
             </p>
-            <form action="/courses" className="flex max-w-xl gap-2 rounded-full border border-border bg-surface p-1.5">
-              <Search className="ml-3 h-5 w-5 self-center text-muted-foreground" />
-              <input name="q" placeholder="Try “Python”, “React”, “Generative AI”" aria-label="Search courses" className="flex-1 bg-transparent text-sm focus:outline-none" />
-              <button className="gradient-fill rounded-full px-5 py-2.5 text-sm font-semibold">Search</button>
-            </form>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {tracks.slice(0, 5).map((t) => (
-                <Link key={t.name} href={`/courses?track=${encodeURIComponent(t.name)}`} className="rounded-full border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground">
-                  {t.name}
-                </Link>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <ButtonLink href="/courses" size="lg">Explore courses</ButtonLink>
+              <ButtonLink href="/programs" size="lg" variant="outline">Explore programs</ButtonLink>
+            </div>
+          </div>
+
+          {/* Spotlight: the top featured course (real data) */}
+          {courses[0] ? (
+            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold tracking-wide text-subtle-foreground uppercase">Featured course</p>
+                <Badge tone="primary">{courses[0].level}</Badge>
+              </div>
+              <p className="mt-3 text-xs font-medium text-primary">{courses[0].track}</p>
+              <h2 className="mt-1 text-xl font-semibold">{courses[0].title}</h2>
+              {courses[0].what_you_learn.length ? (
+                <ul className="mt-4 space-y-2">
+                  {courses[0].what_you_learn.slice(0, 4).map((w) => (
+                    <li key={w} className="flex gap-2.5 text-sm text-muted-foreground"><BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />{w}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  {courses[0].includes.hours ? <span>{courses[0].includes.hours} hours</span> : null}
+                  {courses[0].includes.projects ? <span>{courses[0].includes.projects} projects</span> : null}
+                  {courses[0].includes.certificate !== false ? <span>Certificate</span> : null}
+                </p>
+                <Link href={`/courses/${courses[0].slug}`} className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">View course <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* 2. DISCOVERY / SEARCH */}
+      <section className="container-page py-12">
+        <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
+          <h2 className="text-xl font-semibold">What do you want to learn?</h2>
+          <form action="/courses" role="search" className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3.5 h-5 w-5 -translate-y-1/2 text-subtle-foreground" aria-hidden />
+              <input name="q" aria-label="Search courses" placeholder="Search by skill or topic, e.g. Python, React, SQL" className="h-12 w-full rounded-lg border border-input bg-background pr-4 pl-11 text-base placeholder:text-subtle-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            <button className="h-12 rounded-lg bg-primary px-6 font-semibold text-primary-foreground hover:bg-primary-hover">Search</button>
+          </form>
+          {tracks.length ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Popular:</span>
+              {tracks.slice(0, 6).map((t) => (
+                <Link key={t.name} href={`/courses?track=${encodeURIComponent(t.name)}`} className="rounded-md border border-border px-2.5 py-1 text-muted-foreground hover:border-primary hover:text-primary">{t.name}</Link>
               ))}
             </div>
-          </div>
-          <div className="relative hidden lg:block">
-            <div className="float-slow gradient-border-static rounded-3xl bg-surface p-6 glow">
-              <div className="mb-4 flex items-center gap-2 font-mono text-xs text-muted-foreground">
-                <span className="h-3 w-3 rounded-full bg-destructive/70" /><span className="h-3 w-3 rounded-full bg-warning/70" /><span className="h-3 w-3 rounded-full bg-success/70" />
-                <span className="ml-2">model.py</span>
-              </div>
-              <pre className="overflow-hidden font-mono text-sm leading-relaxed text-muted-foreground">
-{`from sklearn.ensemble import RandomForestClassifier
-
-model = RandomForestClassifier(n_estimators=200)
-model.fit(X_train, y_train)
-
-print(f"accuracy: {model.score(X_test, y_test):.2%}")`}
-              </pre>
-              <div className="mt-5 flex items-center gap-3 rounded-2xl bg-surface-2 p-3">
-                <BadgeCheck className="h-8 w-8 text-success" />
-                <div>
-                  <p className="text-sm font-semibold">Project submitted</p>
-                  <p className="text-xs text-muted-foreground">Mentor review in progress</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          ) : null}
         </div>
       </section>
 
-      {/* OUTCOME STRIP */}
-      <section className="border-y border-border bg-surface/50">
-        <div className="container-page grid grid-cols-2 gap-6 py-8 md:grid-cols-4">
-          {OUTCOMES.map((o) => (
-            <div key={o.value}>
-              <p className="font-display text-xl font-bold gradient-text">{o.value}</p>
-              <p className="text-sm text-muted-foreground">{o.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FEATURED COURSES — Udemy-style card grid */}
-      <section className="container-page py-20">
-        <SectionHeading
-          center={false}
-          eyebrow="Popular programs"
-          title="Start with our most-loved courses"
-          action={<ButtonLink href="/courses" variant="outline" size="sm">View all <ArrowRight className="h-4 w-4" /></ButtonLink>}
-        />
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((c) => <CourseCard key={c.id} course={c} />)}
-        </div>
-      </section>
-
-      {/* TRACKS */}
-      <section className="container-page py-10">
-        <SectionHeading eyebrow="Explore" title="Browse by career track" />
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tracks.map((t) => (
-            <Link key={t.name} href={`/courses?track=${encodeURIComponent(t.name)}`} className="gradient-border flex items-center justify-between rounded-2xl border border-border bg-card p-5">
-              <span className="flex items-center gap-3">
-                <Code2 className="h-5 w-5 text-brand-pink" />
-                <span className="font-medium">{t.name}</span>
-              </span>
-              <span className="text-sm text-muted-foreground">{t.count} course{t.count === 1 ? "" : "s"}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="container-page py-20">
-        <SectionHeading eyebrow="How it works" title="From first lesson to first offer" />
-        <div className="mt-12 grid gap-6 md:grid-cols-4">
-          {STEPS.map((s, i) => (
-            <div key={s.title} className="rounded-2xl border border-border bg-card p-6">
-              <span className="font-mono text-xs text-muted-foreground">0{i + 1}</span>
-              <s.icon className="mt-3 h-7 w-7 text-brand-pink" />
-              <h3 className="mt-4 font-semibold">{s.title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{s.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* INTERNSHIPS TEASER — Internshala-style */}
-      <section className="container-page py-10">
-        <div className="gradient-border-static relative overflow-hidden rounded-3xl bg-surface p-8 md:p-12">
-          <Blobs />
-          <div className="relative grid gap-8 md:grid-cols-[1fr_1.2fr] md:items-center">
-            <div className="space-y-4">
-              <Eyebrow>Internships</Eyebrow>
-              <h2 className="text-3xl font-bold">Complete a course. Unlock an internship.</h2>
-              <p className="text-muted-foreground">Top learners get priority access to paid, mentored internships on real products.</p>
-              <ButtonLink href="/internships">See open roles <ArrowRight className="h-4 w-4" /></ButtonLink>
-            </div>
-            <ul className="space-y-3">
-              {internships.slice(0, 3).map((i) => (
-                <li key={i.id}>
-                  <Link href={`/internships/${i.slug}`} className="flex items-center justify-between rounded-2xl border border-border bg-background/60 p-4 hover:bg-surface-2">
-                    <span>
-                      <span className="block font-medium">{i.title}</span>
-                      <span className="text-xs text-muted-foreground">{i.location} · {i.duration_weeks} weeks</span>
+      {/* 3. CATEGORIES (from real course data) */}
+      {tracks.length ? (
+        <section className="container-page py-8">
+          <SectionHeader title="Browse by category" />
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {tracks.map((t) => {
+              const Icon = TRACK_ICONS[t.name] ?? Code2;
+              return (
+                <li key={t.name}>
+                  <Link href={`/courses?track=${encodeURIComponent(t.name)}`} className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-primary-soft/40">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"><Icon className="h-5 w-5" aria-hidden /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold group-hover:text-primary">{t.name}</span>
+                      <span className="text-sm text-muted-foreground">{t.count} course{t.count === 1 ? "" : "s"}</span>
                     </span>
-                    <span className="text-sm font-semibold text-success">₹{i.stipend_min.toLocaleString("en-IN")}+/mo</span>
+                    <ChevronRight className="h-4 w-4 text-subtle-foreground" aria-hidden />
                   </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* 4. FEATURED COURSES */}
+      {courses.length ? (
+        <section className="container-page py-12">
+          <SectionHeader
+            title="Featured courses"
+            description="Start with our most complete, project-based courses."
+            action={<Link href="/courses" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">View all courses <ArrowRight className="h-4 w-4" aria-hidden /></Link>}
+          />
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {courses.slice(0, 4).map((c, i) => <CourseCard key={c.id} course={c} priority={i < 2} />)}
+          </div>
+        </section>
+      ) : null}
+
+      {/* 5. CAREER PROGRAMS — rendered once a `programs` table exists (Phase 2). */}
+
+      {/* 6. PROJECTS — derived from courses that include projects */}
+      {withProjects.length ? (
+        <section className="border-y border-border bg-surface py-14">
+          <div className="container-page">
+            <SectionHeader title="Learn by building" description="These courses include hands-on projects you submit and keep in your portfolio." />
+            <ul className="mt-8 grid gap-4 md:grid-cols-3">
+              {withProjects.slice(0, 3).map((c) => (
+                <li key={c.id} className="rounded-xl border border-border bg-card p-5">
+                  <FolderGit2 className="h-5 w-5 text-primary" aria-hidden />
+                  <p className="mt-3 font-semibold">{c.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{c.includes.projects} hands-on project{(c.includes.projects ?? 0) > 1 ? "s" : ""}</p>
+                  {c.skills.length ? <div className="mt-3 flex flex-wrap gap-1.5">{c.skills.slice(0, 4).map((s) => <Badge key={s}>{s}</Badge>)}</div> : null}
+                  <Link href={`/courses/${c.slug}`} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">View course <ArrowRight className="h-4 w-4" aria-hidden /></Link>
                 </li>
               ))}
             </ul>
           </div>
+        </section>
+      ) : null}
+
+      {/* 7. INTERNSHIPS */}
+      {internships.length ? (
+        <section className="container-page py-14">
+          <SectionHeader
+            title="Internships for learners"
+            description="Apply for internships linked to the courses you complete."
+            action={<Link href="/internships" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">All internships <ArrowRight className="h-4 w-4" aria-hidden /></Link>}
+          />
+          <ul className="mt-8 grid gap-4 md:grid-cols-3">
+            {internships.slice(0, 3).map((i) => (
+              <li key={i.id}>
+                <Link href={`/internships/${i.slug}`} className="block h-full rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-card">
+                  <p className="font-semibold">{i.title}</p>
+                  <p className="text-sm text-muted-foreground">{i.company}</p>
+                  <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" aria-hidden />{i.mode}</span>
+                    <span className="inline-flex items-center gap-1"><Calendar className="h-4 w-4" aria-hidden />{i.duration_weeks} weeks</span>
+                  </p>
+                  <p className="mt-3 text-sm font-semibold">₹{i.stipend_min.toLocaleString("en-IN")}{i.stipend_max ? `–${i.stipend_max.toLocaleString("en-IN")}` : ""} /month</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* 8. HOW IT WORKS */}
+      <section className="border-y border-border bg-surface py-14">
+        <div className="container-page">
+          <SectionHeader title="How Gradient Code works" description="Every course follows the same path from learning to real-world experience." />
+          <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {HOW_IT_WORKS.map((s, i) => {
+              const Icon = [BookOpen, Code2, FolderGit2, Award, Briefcase][i];
+              return (
+                <li key={s.step} className="rounded-xl border border-border bg-card p-5">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-primary" aria-hidden />
+                    <span className="text-xs font-semibold text-subtle-foreground">Step {i + 1}</span>
+                  </div>
+                  <h3 className="mt-3 font-semibold">{s.step}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
 
-      {/* WHY / TRUST */}
-      <section className="container-page py-20">
-        <SectionHeading eyebrow="Why Gradient Code" title="Built for outcomes, not watch-time" />
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {[
-            { icon: Hammer, t: "Learn by shipping", b: "Every module ends with something you build and push to GitHub." },
-            { icon: Users, t: "Mentors who work in industry", b: "Doubt forum and project reviews from practising engineers." },
-            { icon: Award, t: "Certificates that verify", b: "Each certificate has a public ID employers can check." },
-          ].map((x) => (
-            <div key={x.t} className="rounded-2xl border border-border bg-card p-6">
-              <x.icon className="h-7 w-7 text-brand-pink" />
-              <h3 className="mt-4 font-semibold">{x.t}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{x.b}</p>
+      {/* 9. MENTORS (real instructor rows only) */}
+      {instructors.length ? (
+        <section className="container-page py-14">
+          <SectionHeader title="Learn from practitioners" description="Courses are created by engineers and architects who work with these technologies." />
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {instructors.slice(0, 6).map((m) => (
+              <li key={m.id}>
+                <Link href={`/instructors/${m.slug}`} className="flex h-full gap-4 rounded-xl border border-border bg-card p-5 hover:shadow-card">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary-soft font-semibold text-primary">
+                    {m.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold">{m.name}</span>
+                    {m.headline ? <span className="block text-sm text-muted-foreground">{m.headline}</span> : null}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* 10. CERTIFICATES */}
+      <section className="container-page py-8">
+        <div className="grid gap-8 rounded-xl border border-border bg-card p-6 sm:p-10 lg:grid-cols-2 lg:items-center">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold sm:text-[28px]">Certificates that mean something</h2>
+            <ul className="mt-5 space-y-3">
+              {CERTIFICATE_POINTS.map((p) => (
+                <li key={p} className="flex gap-3 text-muted-foreground"><BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden />{p}</li>
+              ))}
+            </ul>
+            <ButtonLink href="/verify" variant="outline" className="mt-6">Verify a certificate</ButtonLink>
+          </div>
+          <div aria-hidden className="min-w-0 rounded-lg border border-border bg-surface p-4 sm:p-6">
+            <div className="rounded-md border border-border bg-background p-6">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold tracking-wide text-subtle-foreground uppercase">Certificate of completion</span>
+                <Award className="h-6 w-6 text-primary" />
+              </div>
+              <div className="mt-6 h-3 w-40 rounded bg-surface-2" />
+              <div className="mt-3 h-5 w-64 max-w-full rounded bg-surface-2" />
+              <div className="mt-6 flex justify-between border-t border-border pt-4 text-xs text-subtle-foreground">
+                <span>Credential ID</span>
+                <span>Verify online</span>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
-        {/* TODO(antigravity): testimonials section — real learner quotes only, pulled from course_reviews. */}
+      </section>
+
+      {/* 11. FAQ */}
+      <section className="container-page py-14">
+        <div className="grid gap-8 lg:grid-cols-[1fr_2fr]">
+          <SectionHeader className="self-start" title="Frequently asked questions" description="Can't find an answer? Contact us." />
+          <Accordion>
+            {FAQS.map((f) => (
+              <AccordionItem key={f.q} title={f.q}>
+                <p className="px-5 py-4 text-sm text-muted-foreground sm:pl-11">{f.a}</p>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
       </section>
 
       {/* CTA */}
-      <section className="container-page">
-        <div className="gradient-fill rounded-3xl p-10 text-center md:p-14">
-          <h2 className="text-3xl font-bold">Your first lesson is free.</h2>
-          <p className="mx-auto mt-3 max-w-lg text-white/85">Create an account and preview any course before you buy.</p>
-          <ButtonLink href="/signup" variant="secondary" size="lg" className="mt-7">Create free account</ButtonLink>
+      <section className="container-page pb-16">
+        <div className="flex flex-col items-start justify-between gap-6 rounded-xl bg-primary p-8 text-primary-foreground sm:flex-row sm:items-center sm:p-10">
+          <div>
+            <h2 className="text-2xl font-bold">Start with a free preview lesson</h2>
+            <p className="mt-1 text-primary-foreground/85">Create an account and try any course before you buy.</p>
+          </div>
+          <Link href="/signup" className="inline-flex h-12 items-center rounded-lg bg-background px-6 font-semibold text-primary hover:bg-primary-soft">Create free account</Link>
         </div>
       </section>
     </>

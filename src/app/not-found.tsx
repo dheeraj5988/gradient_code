@@ -1,13 +1,15 @@
-import Link from "next/link";
+import { SearchX } from "lucide-react";
+import { Logo } from "@/components/brand";
+import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function NotFound() {
   return (
-    <div className="grid min-h-[70vh] place-items-center text-center">
-      <div>
-        <p className="gradient-text font-display text-7xl font-bold">404</p>
-        <p className="mt-2 text-muted-foreground">This page doesn&apos;t exist.</p>
-        <Link href="/" className="mt-6 inline-block text-brand-pink underline">Go home</Link>
-      </div>
+    <div className="flex min-h-screen flex-col">
+      <header className="flex h-16 items-center border-b border-border px-4 sm:px-6"><Logo /></header>
+      <main id="main" className="container-page flex flex-1 items-center py-16">
+        <EmptyState className="w-full" icon={SearchX} title="Page not found" description="The page you're looking for doesn't exist or has moved." action={<div className="flex gap-2"><ButtonLink href="/" variant="outline" size="sm">Go home</ButtonLink><ButtonLink href="/courses" size="sm">Browse courses</ButtonLink></div>} />
+      </main>
     </div>
   );
 }
