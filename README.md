@@ -11,7 +11,10 @@ npm run dev                  # http://localhost:3000
 ```
 
 ## Database
-Your Supabase project already has the Lovable base schema. Run these files **once, in order**, in the Supabase SQL editor (skip any already applied):
+**Fresh project bootstrapped from `supabase/master_schema.sql`** (see `docs/FRESH_DATABASE_SETUP.md`): run only
+`supabase/migrations/20260929180000_admin_cms.sql` once in the SQL editor.
+
+**Older project that still has the Lovable schema:** run these files **once, in order** (skip any already applied):
 1. `supabase/migrations/20260928120000_marketplace_extensions.sql`
 2. `supabase/migrations/20260929090000_learning_portal_practice.sql` — security fixes + learning portal
 3. `supabase/migrations/20260929120000_drive_video_metadata.sql` — Drive video columns
@@ -22,7 +25,7 @@ Then make yourself admin (see `docs/ADMIN_GUIDE.md`).
 ## Environment variables
 | Variable | Where | Required |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | yes |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`) | public | yes |
 | `NEXT_PUBLIC_SITE_URL` | public | yes (canonical URLs, auth redirects) |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | **server only** | for private Drive streaming & import |
 | `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_*` | **server only** | later (payments) |

@@ -1,6 +1,6 @@
 # Current state — Gradient Code (after Phase 3, 2026-09-29)
 
-Audited from `main` at `d91fdf9` (Antigravity architecture commit), then updated with Phase 3. Facts only; anything not built is listed as missing.
+Audited from `main` at `d91fdf9` and rebased onto `f6fd3af` (Antigravity: fresh-database bootstrap `supabase/master_schema.sql`, manifest, OG image, publishable-key support), then updated with Phase 3. Facts only; anything not built is listed as missing.
 
 ## 1. Architecture
 Next.js **15.5.26** App Router · React 19 · TypeScript strict · Tailwind v4 (light tokens in `src/app/globals.css`) · Supabase via `@supabase/ssr` (anon key + user session only; **no service-role key is used anywhere yet**) · Vercel. Server Components by default; mutations are Server Actions; reads go through `src/lib/data/*` (learner) and `src/lib/admin/*` (admin). Demo mode (sample data, yellow banner) when Supabase env vars are missing.
@@ -21,6 +21,7 @@ Added: instructors, course_reviews, wishlist, coupons, internships, internship_a
 
 ## 5. Migrations (apply in order; older ones already exist in production)
 13 Lovable files → `20260928120000_marketplace_extensions` → `20260929090000_learning_portal_practice` → `20260929120000_drive_video_metadata` → **`20260929180000_admin_cms`**. All 17 verified to apply cleanly on PostgreSQL 16.
+Fresh projects use `supabase/master_schema.sql` (all of the above up to Drive metadata, 37 tables) **plus `20260929180000_admin_cms.sql`** — verified to apply cleanly (38 tables); the master schema contains none of the Phase-2-fixed holes. The fresh seed has 7 courses and **no** `data-science-python-with-ai` course.
 
 ## 6. RLS / security
 All access decisions are in the database (RLS + SECURITY DEFINER RPCs `can_access_course`, `course_outline`, `lesson_content`, `enroll_free`, `submit_practice_answer`, `practice_review`). Admin writes require `has_role(uid,'admin')` in RLS **and** a server-side check in every admin page/action. Details and test matrix: `docs/SECURITY.md`.
@@ -57,7 +58,7 @@ Certificates: table + read-only admin list; no eligibility engine or issuance (s
 - `docs/COURSE_CONTENT_MANIFEST.md` names a service account email; it was not verified to exist.
 
 ## 19. Production blockers
-1. Run migration `20260929180000_admin_cms.sql` (and the earlier Phase 2 ones if not yet applied).
+1. Run migration `20260929180000_admin_cms.sql` on the Supabase project (on top of `master_schema.sql` for the new project).
 2. Create/confirm an admin user (`user_roles.role = 'admin'`).
 3. Configure Google service-account credentials and share course folders with it (otherwise Drive videos use the preview iframe).
 4. Legal pages (terms, privacy, refund) still have no content.
