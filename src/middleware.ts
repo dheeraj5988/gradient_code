@@ -1,0 +1,35 @@
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { IS_DEMO, SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/env";
+
+const PROTECTED = ["/dashboard", "/learn", "/admin", "/checkout"];
+
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({ request });
+  if (IS_DEMO) return response;
+
+  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (list: { name: string; value: string; options?: CookieOptions }[]) => {
+        list.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        list.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      },
+    },
+  });
+
+  const { data } = await supabase.auth.getUser();
+  const path = request.nextUrl.pathname;
+  if (!data.user && PROTECTED.some((p) => path.startsWith(p))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
+  return response;
+}
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+};
