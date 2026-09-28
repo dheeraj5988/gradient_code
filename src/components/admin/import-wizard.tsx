@@ -26,6 +26,7 @@ export function ImportWizard({ courses, sources, defaultCourse, configured }: { 
         <ul className="mt-3 space-y-1 text-sm">
           {r.createdCourse ? <li>Created a new <strong>draft</strong> course.</li> : null}
           <li>{r.modulesCreated} modules, {r.lessonsCreated} lessons and {r.resourcesCreated} resources added — all <strong>unpublished</strong>.</li>
+          {r.modulesLinked ? <li>{r.modulesLinked} existing modules were matched by name and linked to their Drive folders.</li> : null}
           {r.skippedExisting ? <li>{r.skippedExisting} items were already imported and were left untouched.</li> : null}
           {r.excluded ? <li>{r.excluded} items were excluded by you.</li> : null}
         </ul>
@@ -106,7 +107,7 @@ export function ImportWizard({ courses, sources, defaultCourse, configured }: { 
                   <label className="flex cursor-pointer items-center gap-3 border-b border-border px-4 py-3">
                     <input type="checkbox" checked={!mOff} onChange={() => toggle(`m:${m.key}`)} className="h-4 w-4 accent-[var(--primary)]" aria-label={`Include module ${m.title}`} />
                     <Folder className="h-4 w-4 text-subtle-foreground" aria-hidden />
-                    <span className="min-w-0 flex-1"><span className="block font-semibold">{i + 1}. {m.title}</span><span className="block truncate text-xs text-muted-foreground">{m.sourceName}{m.exists ? " · module already exists — new files are added to it" : ""}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block font-semibold">{i + 1}. {m.title}</span><span className="block truncate text-xs text-muted-foreground">{m.sourceName}{m.exists ? " · matches an existing module — new files are added to it" : ""}</span></span>
                     <span className="text-xs text-muted-foreground">{m.lessons.length} videos · {m.resources.length} resources</span>
                   </label>
                   <details>

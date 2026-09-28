@@ -88,7 +88,10 @@ export type ImportPlan = {
   warnings: string[];
 };
 
-export type Existing = { moduleFolderIds: Set<string>; lessonFileIds: Set<string>; resourceFileIds: Set<string> };
+/** moduleTitles: normalised titles of existing modules not yet linked to a Drive folder (matched by name). */
+export type Existing = { moduleFolderIds: Set<string>; lessonFileIds: Set<string>; resourceFileIds: Set<string>; moduleTitles?: Set<string> };
+
+export const normTitle = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 /**
  * Folder → module mapping:
@@ -132,7 +135,7 @@ export function buildPlan(tree: Tree, existing: Existing = { moduleFolderIds: ne
       // Root-level files: videos form a "Getting started" module; documents become course-wide resources.
       title: folder ? cleanTitle(folder.name, { isFolder: true }) : lessons.length ? "Getting started" : "Course materials",
       sourceName: folder?.name ?? tree.root.name,
-      exists: existing.moduleFolderIds.has(folder?.id ?? tree.root.id),
+      exists: existing.moduleFolderIds.has(folder?.id ?? tree.root.id) || (!!folder && !!existing.moduleTitles?.has(normTitle(cleanTitle(folder.name, { isFolder: true })))),
       lessons,
       resources,
     };

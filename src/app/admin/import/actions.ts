@@ -4,13 +4,13 @@ import { requireAdminAction, type ActionResult, type AdminCtx } from "@/lib/admi
 import { audit } from "@/lib/admin/audit";
 import { UUID_RE, parseDriveId, slugify, str } from "@/lib/admin/util";
 import { DriveError, driveConfigStatus, getFolder, listFolder } from "@/lib/google-drive/client";
-import { buildPlan, scanTree, type Existing, type ImportPlan } from "@/lib/google-drive/importer";
+import { buildPlan, normTitle, scanTree, type Existing, type ImportPlan } from "@/lib/google-drive/importer";
 
 async function existingFor(ctx: AdminCtx, courseId: string | null): Promise<Existing> {
   const empty: Existing = { moduleFolderIds: new Set(), lessonFileIds: new Set(), resourceFileIds: new Set() };
   if (!courseId) return empty;
   const s = ctx.supabase;
-  const { data: mods } = await s.from("course_modules").select("id,drive_folder_id").eq("course_id", courseId);
+  const { data: mods } = await s.from("course_modules").select("id,title,drive_folder_id").eq("course_id", courseId);
   const modIds = (mods ?? []).map((m) => m.id);
   const [{ data: ls }, { data: rs }] = await Promise.all([
     modIds.length ? s.from("lessons").select("drive_file_id").in("module_id", modIds).not("drive_file_id", "is", null) : Promise.resolve({ data: [] as { drive_file_id: string }[] }),
@@ -20,6 +20,7 @@ async function existingFor(ctx: AdminCtx, courseId: string | null): Promise<Exis
     moduleFolderIds: new Set((mods ?? []).map((m) => m.drive_folder_id).filter(Boolean) as string[]),
     lessonFileIds: new Set((ls ?? []).map((l) => l.drive_file_id as string)),
     resourceFileIds: new Set((rs ?? []).map((r) => r.drive_file_id as string)),
+    moduleTitles: new Set((mods ?? []).filter((m) => !m.drive_folder_id).map((m) => normTitle(m.title))),
   };
 }
 
@@ -59,7 +60,7 @@ export async function scanDriveFolder(_prev: unknown, form: FormData): Promise<A
   }
 }
 
-export type ImportSummary = { courseId: string; createdCourse: boolean; modulesCreated: number; lessonsCreated: number; resourcesCreated: number; skippedExisting: number; excluded: number };
+export type ImportSummary = { courseId: string; createdCourse: boolean; modulesCreated: number; modulesLinked: number; lessonsCreated: number; resourcesCreated: number; skippedExisting: number; excluded: number };
 
 /**
  * Step 2: import as DRAFT. Re-scans server-side (never trusts the client's plan),
@@ -95,20 +96,39 @@ export async function runDriveImport(_prev: unknown, form: FormData): Promise<Ac
     createdCourse = true;
   }
 
-  const { data: existingMods } = await s.from("course_modules").select("id,drive_folder_id,order_index").eq("course_id", courseId);
+  const { data: existingMods } = await s.from("course_modules").select("id,title,drive_folder_id,order_index").eq("course_id", courseId);
+  // Unlinked legacy modules can be matched by title (then linked to the Drive folder).
+  const unlinkedByTitle = new Map((existingMods ?? []).filter((m) => !m.drive_folder_id).map((m) => [normTitle(m.title), m.id as string]));
   let nextModuleOrder = Math.max(-1, ...(existingMods ?? []).map((m) => m.order_index)) + 1;
   const modByFolder = new Map((existingMods ?? []).filter((m) => m.drive_folder_id).map((m) => [m.drive_folder_id as string, m.id as string]));
-  const sum: ImportSummary = { courseId: courseId!, createdCourse, modulesCreated: 0, lessonsCreated: 0, resourcesCreated: 0, skippedExisting: 0, excluded: 0 };
+  const sum: ImportSummary = { courseId: courseId!, createdCourse, modulesCreated: 0, modulesLinked: 0, lessonsCreated: 0, resourcesCreated: 0, skippedExisting: 0, excluded: 0 };
 
   for (const m of plan.modules) {
     if (excluded.has(`m:${m.key}`)) { sum.excluded += m.lessons.length + m.resources.length; continue; }
     const lessons = m.lessons.filter((l) => { if (l.exists) { sum.skippedExisting++; return false; } if (excluded.has(`f:${l.driveFileId}`)) { sum.excluded++; return false; } return true; });
     const resources = m.resources.filter((r) => { if (r.exists) { sum.skippedExisting++; return false; } if (excluded.has(`f:${r.driveFileId}`)) { sum.excluded++; return false; } return true; });
-    if (!lessons.length && !resources.length) continue;
+    if (!lessons.length && !resources.length) {
+      // Nothing new, but still link a title-matched legacy module to its Drive folder for future imports.
+      const tid = m.driveFolderId && !modByFolder.has(m.driveFolderId) ? unlinkedByTitle.get(normTitle(m.title)) : undefined;
+      if (tid && m.driveFolderId) {
+        await s.from("course_modules").update({ drive_folder_id: m.driveFolderId }).eq("id", tid);
+        unlinkedByTitle.delete(normTitle(m.title));
+        modByFolder.set(m.driveFolderId, tid);
+        sum.modulesLinked++;
+      }
+      continue;
+    }
 
     // Root-level documents with no videos → course-wide resources (no module).
     const courseWide = m.key === "__root__" && !lessons.length;
     let moduleId: string | null | undefined = courseWide ? null : m.driveFolderId ? modByFolder.get(m.driveFolderId) : undefined;
+    if (moduleId === undefined && m.driveFolderId && unlinkedByTitle.has(normTitle(m.title))) {
+      moduleId = unlinkedByTitle.get(normTitle(m.title))!;
+      unlinkedByTitle.delete(normTitle(m.title));
+      await s.from("course_modules").update({ drive_folder_id: m.driveFolderId }).eq("id", moduleId);
+      modByFolder.set(m.driveFolderId, moduleId);
+      sum.modulesLinked++;
+    }
     if (moduleId === undefined) {
       const { data: nm, error } = await s.from("course_modules").insert({ course_id: courseId, title: m.title, order_index: nextModuleOrder++, drive_folder_id: m.driveFolderId }).select("id").single();
       if (error) return { ok: false, error: `Stopped at module “${m.title}”: ${error.message}. Items imported so far are kept as drafts.` };

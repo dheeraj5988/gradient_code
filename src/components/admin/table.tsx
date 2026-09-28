@@ -66,16 +66,16 @@ export function DataTable({ base, params, columns, rows, total, empty }: { base:
 /** GET-form toolbar: search + select filters. Works without JS. */
 export function Toolbar({ params, placeholder, filters = [], children }: { params: ListParams; placeholder: string; filters?: { name: string; label: string; options: [string, string][] }[]; children?: ReactNode }) {
   return (
-    <form role="search" className="mb-4 flex flex-wrap items-end gap-2">
-      <div className="relative min-w-52 flex-1">
+    <form role="search" className="mb-4 flex min-w-0 flex-wrap items-end gap-2">
+      <div className="relative w-full min-w-0 flex-1 sm:min-w-52">
         <label htmlFor="adm-q" className="sr-only">Search</label>
         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-subtle-foreground" aria-hidden />
         <input id="adm-q" name="q" defaultValue={params.q} placeholder={placeholder} className="h-9 w-full rounded-lg border border-input bg-background pr-3 pl-9 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
       </div>
       {filters.map((f) => (
-        <label key={f.name} className="text-xs text-muted-foreground">
+        <label key={f.name} className="w-full min-w-0 text-xs text-muted-foreground sm:w-auto">
           <span className="sr-only">{f.label}</span>
-          <select name={f.name} defaultValue={params.filters[f.name] ?? ""} aria-label={f.label} className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground focus:border-primary focus:outline-none">
+          <select name={f.name} defaultValue={params.filters[f.name] ?? ""} aria-label={f.label} className="h-9 w-full max-w-full truncate rounded-lg border border-input bg-background px-2.5 text-sm text-foreground focus:border-primary focus:outline-none sm:w-auto sm:max-w-56">
             <option value="">{f.label}: all</option>
             {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>

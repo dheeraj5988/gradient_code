@@ -35,3 +35,16 @@ The full migration chain was applied to a local PostgreSQL 16 with Supabase-styl
 - Old Lovable app: logged-out visitors can no longer read lessons directly; any old page that listed curriculum with the anon key will show it empty. Enrolled students and admins are unaffected.
 - `orders` insert by the owner is still allowed (it grants nothing). It will be locked to the server in Phase 7.
 - Drive-hosted video URLs are still shareable once an enrolled learner has them — use a streaming host with signed URLs for stronger protection.
+
+## Phase 3 additions (admin CMS)
+- **Admin authorization, two layers:** every `/admin` page calls `requireAdminPage()` (server-side `has_role` check → redirect) and every admin server action calls `requireAdminAction()`; all admin-writable tables also enforce `has_role(auth.uid(),'admin')` in RLS. No client-side role checks are trusted.
+- **Unpublished lessons** are hidden from learners in `course_outline()`, `lesson_content()` and the `lessons` RLS policy (staff still see them).
+- **Demo-mode open proxy fixed:** the Drive prototype `/api/video/[id]` streamed *any* Drive file ID without authentication when Supabase env vars were missing. It now refuses in demo mode, validates the lesson UUID, and only streams the Drive file linked to a lesson the database authorises. The client never supplies a Drive ID.
+- **Private resources:** `/api/resource/[id]` streams Drive-backed resources only if RLS returns the row (published + enrolled, or admin).
+- **Answer keys** are written only by admins (`practice_answer_keys` RLS); the admin UI never sends them to learners.
+- **Review moderation:** only admins can hide/restore; hidden reviews are excluded from ratings and public reads.
+- **Enrollment grants** record `granted_by` + `notes` and are written to the append-only `admin_audit_log` (no update/delete policies).
+- **Dependencies:** Next.js 15.5.26; `postcss` and `sharp` pinned to patched versions via `overrides`; `npm audit` reports 0 vulnerabilities.
+
+### Phase 3 attack tests (student JWT against the REST API) — all denied
+create/edit/publish course · create module · edit lesson video · create question · read/write answer keys · `practice_review` before attempting · issue certificate · self-enroll in paid course (direct + RPC) · extend own enrollment · read another learner's notes/attempts · forge an attempt · read paid lesson (not enrolled) · anon read lessons · read/write audit log · moderate reviews · grant self admin · change application status · create resource · see unpublished lessons in outline. Admin writes and legitimate learner reads succeed (31/31).
