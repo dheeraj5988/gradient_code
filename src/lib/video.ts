@@ -18,6 +18,7 @@ export function toPlayerSource(url: string | null | undefined): PlayerSource {
   const vimeo = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   if (vimeo) return { kind: "iframe", src: `https://player.vimeo.com/video/${vimeo[1]}` };
 
+  if (raw.startsWith("/api/video/")) return { kind: "file", src: raw };
   if (/\.(mp4|webm|ogg|m3u8)(\?.*)?$/i.test(raw)) return { kind: "file", src: raw };
 
   return { kind: "iframe", src: raw };
