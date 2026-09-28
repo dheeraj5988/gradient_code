@@ -1,4 +1,7 @@
-export type PlayerSource = { kind: "iframe" | "file"; src: string } | null;
+export type PlayerSource =
+  | { kind: "iframe" | "file"; src: string }
+  | { kind: "unavailable"; message?: string }
+  | null;
 
 /** Normalises common hosting links (Google Drive, YouTube, Vimeo) into an embeddable source. */
 export function toPlayerSource(url: string | null | undefined): PlayerSource {

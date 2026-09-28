@@ -30,9 +30,29 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
 
   // The DATABASE decides whether content is returned (enrolled / admin / free preview).
   const content = enrolled || lesson.is_free_preview ? await getLessonContent(lesson.id) : null;
-  // Drive lessons stream through the access-checked /api/video proxy (native player → progress & resume work).
-  // Without Drive credentials we fall back to the legacy Drive preview iframe.
-  const source: PlayerSource = !content ? null : content.has_drive_file && isDriveConfigured() ? { kind: "file", src: `/api/video/${lesson.id}` } : toPlayerSource(content.video_url);
+  const isDrive = !!content && (content.has_drive_file || !!(content.video_url && /drive\.google\.com/.test(content.video_url)));
+
+  let source: PlayerSource = null;
+  if (content) {
+    if (isDrive) {
+      if (isDriveConfigured()) {
+        source = { kind: "file", src: `/api/video/${lesson.id}` };
+      } else if (!enrolled && lesson.is_free_preview && content.video_url) {
+        // Free preview fallback where authorized
+        source = toPlayerSource(content.video_url);
+      } else {
+        // Protected/paid lesson with unconfigured server streaming:
+        // Do NOT expose public Drive preview iframe or new-tab link. Show clean unavailable state.
+        source = {
+          kind: "unavailable",
+          message: "Video playback is temporarily unavailable. Please try again later.",
+        };
+      }
+    } else {
+      source = toPlayerSource(content.video_url);
+    }
+  }
+
   const [position, notes, resources] = enrolled
     ? await Promise.all([getVideoPosition(ctx.userId, lesson.id), getNotes(ctx.userId, ctx.course.id, { lessonId: lesson.id }), getResources(ctx.course.id)])
     : [0, [], []];
@@ -53,7 +73,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
               </div>
             </div>
           ) : source ? (
-            <VideoPlayer key={lesson.id} source={source} lessonId={lesson.id} title={lesson.title} initialPosition={position} track={enrolled} />
+            <VideoPlayer key={lesson.id} source={source} lessonId={lesson.id} title={lesson.title} initialPosition={position} track={enrolled} courseHref={base} />
           ) : lesson.type === "live" && content.join_url ? (
             <div className="grid h-full place-items-center p-6 text-center text-white">
               <div>
