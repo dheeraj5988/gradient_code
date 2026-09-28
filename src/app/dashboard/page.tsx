@@ -4,7 +4,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ProgressRing } from "@/components/ui/progress-ring";
-import { getLearnerSummary, getMyCourses, getNextLessons } from "@/lib/data/queries";
+import { getLearnerSummary, getMyCourses } from "@/lib/data/queries";
+import { getNextLessons, getPracticeSummaries } from "@/lib/data/learning";
 import { getUser } from "@/lib/supabase/server";
 import { formatDuration } from "@/lib/utils";
 import { ProgressCard } from "./progress-card";
@@ -13,7 +14,7 @@ export const metadata = { title: "Dashboard" };
 
 function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-border bg-card">
+    <section className="min-w-0 rounded-xl border border-border bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
         <h2 className="text-sm font-semibold">{title}</h2>
         {action}
@@ -35,7 +36,8 @@ export default async function DashboardPage() {
   const user = await getUser();
   const uid = user?.id ?? null;
   const courses = await getMyCourses(uid);
-  const [summary, upNext] = await Promise.all([getLearnerSummary(uid), getNextLessons(uid, courses)]);
+  const [summary, upNext, practice] = await Promise.all([getLearnerSummary(uid), getNextLessons(uid, courses), getPracticeSummaries(uid, courses.map((c) => c.id))]);
+  const practiceRows = courses.filter((c) => practice.has(c.id)).map((c) => ({ c, ...practice.get(c.id)! }));
   const inProgress = courses.filter((c) => c.progress > 0 && c.progress < 100);
   const completed = courses.filter((c) => c.progress === 100).length;
   const resume = inProgress[0] ?? courses.find((c) => c.progress < 100);
@@ -65,7 +67,7 @@ export default async function DashboardPage() {
             <h2 className="mt-1 text-lg font-semibold">{resume.title}</h2>
             {resumeNext ? <p className="mt-1 text-sm text-muted-foreground">Next: {resumeNext.lessonTitle}{resumeNext.duration ? ` · ${formatDuration(resumeNext.duration)}` : ""}</p> : null}
           </div>
-          <ButtonLink href={`/learn/${resume.slug}${resumeNext ? `?lesson=${resumeNext.lessonId}` : ""}`}>
+          <ButtonLink href={resumeNext ? `/learn/${resume.slug}/lesson/${resumeNext.lessonId}` : `/learn/${resume.slug}`}>
             <PlayCircle className="h-4 w-4" aria-hidden />{resume.progress ? "Resume" : "Start course"}
           </ButtonLink>
         </section>
@@ -103,7 +105,7 @@ export default async function DashboardPage() {
               <ul className="-my-3 divide-y divide-border">
                 {upNext.map((u) => (
                   <li key={u.course.id}>
-                    <Link href={`/learn/${u.course.slug}?lesson=${u.lessonId}`} className="group flex items-center gap-3 py-3">
+                    <Link href={`/learn/${u.course.slug}/lesson/${u.lessonId}`} className="group flex items-center gap-3 py-3">
                       <PlayCircle className="h-5 w-5 shrink-0 text-subtle-foreground group-hover:text-primary" aria-hidden />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium group-hover:text-primary">{u.lessonTitle}</span>
@@ -120,7 +122,20 @@ export default async function DashboardPage() {
           </Panel>
 
           <div className="grid gap-6 md:grid-cols-3">
-            <Panel title="Practice"><NotYet icon={Code2} text="Course practice questions will appear here once your course's question bank is published." /></Panel>
+            <Panel title="Practice">
+              {practiceRows.length ? (
+                <ul className="space-y-3">
+                  {practiceRows.map(({ c, total, solved }) => (
+                    <li key={c.id}>
+                      <Link href={`/learn/${c.slug}/practice`} className="block hover:text-primary">
+                        <span className="flex justify-between gap-2 text-sm"><span className="truncate">{c.title}</span><span className="shrink-0 text-xs tabular-nums text-muted-foreground">{solved}/{total}</span></span>
+                        <ProgressBar value={(solved / total) * 100} size="sm" className="mt-1.5" label={`${c.title} practice`} />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : <NotYet icon={Code2} text="Practice questions appear here when your courses publish a question bank." />}
+            </Panel>
             <Panel title="Projects"><NotYet icon={FolderGit2} text="Project submissions and review status will appear here." /></Panel>
             <Panel title="Assessments"><NotYet icon={ClipboardCheck} text="Quizzes and final assessments will appear here with your scores." /></Panel>
           </div>

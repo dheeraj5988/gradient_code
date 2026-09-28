@@ -1,5 +1,7 @@
 # Repository audit — after Phase 1 (2026-09-28)
 
+> Phase 2 update: security holes fixed and portal/practice built — see `docs/SECURITY.md` and `docs/ROADMAP.md`.
+
 ## 1. Architecture
 - Next.js 15 App Router, React 19, TypeScript strict, Tailwind v4 (tokens in `src/app/globals.css`).
 - Supabase via `@supabase/ssr`: `lib/supabase/{client,server,env}.ts`; `middleware.ts` refreshes the session and guards `/dashboard`, `/learn`, `/admin`, `/checkout`.

@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/input";
 import { CourseThumb } from "@/components/course-thumb";
 import { getCourseBySlug } from "@/lib/data/queries";
 import { discountPercent, formatPrice } from "@/lib/utils";
+import { enrollFree } from "./actions";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
-export default async function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CheckoutPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ error?: string }> }) {
   const course = await getCourseBySlug((await params).slug);
+  const { error } = await searchParams;
   if (!course) notFound();
   const off = discountPercent(course.price, course.mrp);
   return (
@@ -61,7 +63,12 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
                 <div className="flex justify-between border-t border-border pt-3 text-base font-bold"><dt>Total</dt><dd className="tabular-nums">{formatPrice(course.price)}</dd></div>
               </dl>
               {/* TODO(antigravity, Phase 8): Razorpay order → checkout → server verification → enrollment */}
-              <Button size="lg" className="w-full" disabled>Payments launching soon</Button>
+              {error ? <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p> : null}
+              {course.price === 0 ? (
+                <form action={enrollFree.bind(null, course.id, course.slug)}><Button size="lg" className="w-full">Enroll for free</Button></form>
+              ) : (
+                <Button size="lg" className="w-full" disabled>Payments launching soon</Button>
+              )}
               <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" aria-hidden />UPI, cards and netbanking via Razorpay</p>
               <p className="text-center text-xs text-muted-foreground">By purchasing you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/refund" className="underline">Refund policy</Link>.</p>
             </div>

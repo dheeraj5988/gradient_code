@@ -130,7 +130,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
             <div className="relative">
               <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} priority />
               {preview ? (
-                <Link href={`/learn/${course.slug}?lesson=${preview.id}`} className="group absolute inset-0 grid place-items-center">
+                <Link href={`/learn/${course.slug}/lesson/${preview.id}`} className="group absolute inset-0 grid place-items-center">
                   <span className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 rounded-lg bg-foreground/85 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors group-hover:bg-foreground"><PlayCircle className="h-4 w-4" aria-hidden />Preview this course</span>
                 </Link>
               ) : null}
@@ -151,7 +151,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
                 <div className="grid gap-2">
                   <ButtonLink href={`/checkout/${course.slug}`} size="lg" className="w-full">{course.price ? "Buy now" : "Enroll for free"}</ButtonLink>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
-                    {preview ? <ButtonLink href={`/learn/${course.slug}?lesson=${preview.id}`} variant="outline" className="w-full">Preview</ButtonLink> : <span />}
+                    {preview ? <ButtonLink href={`/learn/${course.slug}/lesson/${preview.id}`} variant="outline" className="w-full">Preview</ButtonLink> : <span />}
                     <form action={toggleWishlist.bind(null, course.id, course.slug, saved)}>
                       <button aria-pressed={saved} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} className={buttonClass({ variant: "outline" }, "w-10 px-0")}>
                         <Heart className={cn("h-4 w-4", saved && "fill-danger text-danger")} aria-hidden />

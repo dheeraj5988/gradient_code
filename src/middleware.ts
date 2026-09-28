@@ -2,7 +2,9 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { IS_DEMO, SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/env";
 
-const PROTECTED = ["/dashboard", "/learn", "/admin", "/checkout"];
+// /learn is NOT listed: logged-out visitors may open free-preview lessons. Protected
+// content is enforced in the database (lesson_content RPC + RLS), not here.
+const PROTECTED = ["/dashboard", "/admin", "/checkout"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

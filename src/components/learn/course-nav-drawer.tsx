@@ -14,7 +14,7 @@ export function CourseNavDrawer({ children, label }: { children: ReactNode; labe
   return (
     <>
       <button onClick={() => setOpen(true)} aria-expanded={open} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border-strong px-3 text-sm font-medium lg:hidden">
-        <ListVideo className="h-4 w-4" aria-hidden />Lessons
+        <ListVideo className="h-4 w-4" aria-hidden />Menu
       </button>
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={label}>

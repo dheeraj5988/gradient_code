@@ -138,24 +138,18 @@ export async function getCourseBySlug(slug: string): Promise<Course | null> {
   return all.find((c) => c.slug === slug) ?? null;
 }
 
+/** Public curriculum outline via the course_outline() RPC — never includes media URLs or lesson text. */
 export async function getCurriculum(courseId: string): Promise<Module[]> {
   if (IS_DEMO) return demoCurriculum(courseId);
   const supabase = await createClient();
-  const { data: modules } = await supabase
-    .from("course_modules").select("id,title,order_index").eq("course_id", courseId).order("order_index");
-  const ids = (modules ?? []).map((m) => m.id);
-  if (!ids.length) return [];
-  // Public listing: never expose video_url here — the player fetches it after an enrollment check.
-  const { data: lessons } = await supabase
-    .from("lessons")
-    .select("id,module_id,title,type,duration_seconds,order_index,is_free_preview")
-    .in("module_id", ids)
-    .order("order_index");
+  const [{ data: modules }, { data: outline }] = await Promise.all([
+    supabase.from("course_modules").select("id,title,order_index").eq("course_id", courseId).order("order_index"),
+    supabase.rpc("course_outline", { _course_id: courseId }),
+  ]);
+  const rows = (outline ?? []) as Omit<Module["lessons"][number], "video_url" | "content_text">[];
   return (modules ?? []).map((m) => ({
     ...m,
-    lessons: (lessons ?? [])
-      .filter((l) => l.module_id === m.id)
-      .map((l) => ({ ...l, video_url: null, content_text: null })),
+    lessons: rows.filter((l) => l.module_id === m.id).map((l) => ({ ...l, video_url: null, content_text: null })),
   })) as Module[];
 }
 
@@ -218,9 +212,15 @@ export async function getInternship(slug: string) {
 export type MyCourse = Course & { progress: number; total: number; completed: number };
 
 export async function getMyCourses(userId: string | null): Promise<MyCourse[]> {
-  if (IS_DEMO || !userId) {
-    return DEMO_COURSES.slice(0, 3).map((c, i) => ({ ...c, total: 16, completed: [11, 4, 0][i], progress: [69, 25, 0][i] }));
+  if (IS_DEMO) {
+    const { demoStore } = await import("./demo-learning");
+    return DEMO_COURSES.slice(0, 3).map((c) => {
+      const ids = demoCurriculum(c.id).flatMap((m) => m.lessons.map((l) => l.id));
+      const completed = ids.filter((id) => demoStore.completed.has(id)).length;
+      return { ...c, total: ids.length, completed, progress: Math.round((completed / ids.length) * 100) };
+    });
   }
+  if (!userId) return [];
   const supabase = await createClient();
   const { data: enr } = await supabase
     .from("enrollments").select("course_id, expires_at").eq("user_id", userId);
@@ -244,32 +244,13 @@ export async function getMyCourses(userId: string | null): Promise<MyCourse[]> {
   });
 }
 
+/** True when the DB grants course access (active enrollment, admin or staff). */
 export async function isEnrolled(userId: string | null, courseId: string) {
   if (IS_DEMO) return true;
   if (!userId) return false;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("enrollments").select("expires_at").eq("user_id", userId).eq("course_id", courseId).maybeSingle();
-  return !!data && (!data.expires_at || new Date(data.expires_at) > new Date());
-}
-
-/** Full curriculum incl. video URLs — call only after isEnrolled() is true. */
-export async function getPlayerCurriculum(courseId: string, userId: string | null) {
-  if (IS_DEMO) return { modules: demoCurriculum(courseId), completed: new Set<string>() };
-  const supabase = await createClient();
-  const { data: modules } = await supabase
-    .from("course_modules").select("id,title,order_index").eq("course_id", courseId).order("order_index");
-  const ids = (modules ?? []).map((m) => m.id);
-  const { data: lessons } = ids.length
-    ? await supabase.from("lessons").select("*").in("module_id", ids).order("order_index")
-    : { data: [] };
-  const { data: done } = userId
-    ? await supabase.from("lesson_progress").select("lesson_id").eq("user_id", userId)
-    : { data: [] };
-  return {
-    modules: (modules ?? []).map((m) => ({ ...m, lessons: (lessons ?? []).filter((l: any) => l.module_id === m.id) })) as Module[],
-    completed: new Set((done ?? []).map((d: any) => d.lesson_id as string)),
-  };
+  const { data } = await supabase.rpc("can_access_course", { _course_id: courseId });
+  return Boolean(data);
 }
 
 /* ---------- Learner summary (dashboard) — every number comes from real rows ---------- */
@@ -303,17 +284,6 @@ export async function getLearnerSummary(userId: string | null): Promise<LearnerS
     profile: { percent: Math.round(((fields.length - missing.length) / fields.length) * 100), missing },
     applications: apps.error ? 0 : (apps.count ?? 0),
   };
-}
-
-/** Next unfinished lesson per enrolled course, for "Up next". */
-export async function getNextLessons(userId: string | null, courses: MyCourse[]) {
-  const out: { course: MyCourse; lessonId: string; lessonTitle: string; duration: number }[] = [];
-  for (const c of courses.filter((x) => x.progress < 100).slice(0, 4)) {
-    const { modules, completed } = await getPlayerCurriculum(c.id, userId);
-    const next = modules.flatMap((m) => m.lessons).find((l) => !completed.has(l.id));
-    if (next) out.push({ course: c, lessonId: next.id, lessonTitle: next.title, duration: next.duration_seconds });
-  }
-  return out;
 }
 
 export async function isWishlisted(userId: string | null, courseId: string) {

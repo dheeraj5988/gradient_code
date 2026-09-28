@@ -1,190 +1,148 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Clock, FileText, Lock, PlayCircle, Radio, X } from "lucide-react";
-import { Logo } from "@/components/brand";
-import { buttonClass, ButtonLink } from "@/components/ui/button";
+import { notFound, redirect } from "next/navigation";
+import { ArrowRight, Award, CalendarDays, CheckCircle2, Code2, FolderGit2, PlayCircle } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Tabs } from "@/components/ui/tabs";
-import { CourseNavDrawer } from "@/components/learn/course-nav-drawer";
-import { getCourseBySlug, getCurriculum, getPlayerCurriculum, isEnrolled } from "@/lib/data/queries";
-import type { Module } from "@/lib/data/types";
-import { getUser } from "@/lib/supabase/server";
-import { cn, formatDuration } from "@/lib/utils";
-import { toPlayerSource } from "@/lib/video";
-import { toggleComplete } from "./actions";
+import { ProgressRing } from "@/components/ui/progress-ring";
+import { Panel } from "@/components/learn/portal";
+import { LearningPlanForm } from "@/components/learn/learning-plan-form";
+import { buildPlan, getLearningContext, getPlan, getPractice } from "@/lib/data/learning";
+import { formatDuration } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Learn", robots: { index: false, follow: false } };
-
-function LessonList({ modules, currentId, completed, enrolled }: { modules: Module[]; currentId?: string; completed: Set<string>; enrolled: boolean }) {
-  return (
-    <div>
-      {modules.map((m, mi) => {
-        const done = m.lessons.filter((l) => completed.has(l.id)).length;
-        return (
-          <details key={m.id} open={m.lessons.some((l) => l.id === currentId) || (mi === 0 && !currentId)} className="group border-b border-border">
-            <summary className="cursor-pointer px-4 py-3 hover:bg-surface">
-              <span className="block text-xs text-subtle-foreground">Section {mi + 1}{enrolled ? ` · ${done}/${m.lessons.length}` : ""}</span>
-              <span className="block text-sm font-semibold">{m.title}</span>
-            </summary>
-            <ul className="pb-2">
-              {m.lessons.map((l) => {
-                const locked = !enrolled && !l.is_free_preview;
-                const isDone = completed.has(l.id);
-                const current = l.id === currentId;
-                const TypeIcon = l.type === "text" ? FileText : l.type === "live" ? Radio : PlayCircle;
-                const StateIcon = isDone ? CheckCircle2 : locked ? Lock : Circle;
-                return (
-                  <li key={l.id}>
-                    <Link
-                      href={`?lesson=${l.id}`}
-                      aria-current={current ? "page" : undefined}
-                      className={cn("flex items-start gap-3 border-l-2 px-4 py-2.5 text-sm", current ? "border-primary bg-primary-soft" : "border-transparent hover:bg-surface")}
-                    >
-                      <StateIcon className={cn("mt-0.5 h-4 w-4 shrink-0", isDone ? "text-success" : "text-subtle-foreground")} aria-label={isDone ? "Completed" : locked ? "Locked" : "Not completed"} />
-                      <span className="min-w-0 flex-1">
-                        <span className={cn("block", current && "font-medium text-primary")}>{l.title}</span>
-                        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-subtle-foreground">
-                          <TypeIcon className="h-3 w-3" aria-hidden />
-                          {l.duration_seconds ? formatDuration(l.duration_seconds) : l.type}
-                          {l.is_free_preview && !enrolled ? <span className="font-medium text-primary">· Preview</span> : null}
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </details>
-        );
-      })}
-    </div>
-  );
-}
-
-export default async function LearnPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ lesson?: string }> }) {
+export default async function LearnOverview({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ lesson?: string }> }) {
   const { slug } = await params;
-  const { lesson: lessonId } = await searchParams;
-  const course = await getCourseBySlug(slug);
-  if (!course) notFound();
-  const user = await getUser();
-  const enrolled = await isEnrolled(user?.id ?? null, course.id);
+  const { lesson } = await searchParams;
+  if (lesson) redirect(`/learn/${slug}/lesson/${lesson}`); // old ?lesson= links
+  const ctx = await getLearningContext(slug);
+  if (!ctx) notFound();
+  const { course, progress } = ctx;
+  const enrolled = ctx.access === "enrolled";
+  const preview = ctx.lessons.find((l) => l.is_free_preview);
 
-  // Server decides access: enrolled → full curriculum with media. Otherwise → public outline only.
-  const { modules, completed } = enrolled
-    ? await getPlayerCurriculum(course.id, user?.id ?? null)
-    : { modules: await getCurriculum(course.id), completed: new Set<string>() };
-  const lessons = modules.flatMap((m) => m.lessons);
-  const current = lessons.find((l) => l.id === lessonId) ?? (enrolled ? lessons.find((l) => !completed.has(l.id)) : lessons.find((l) => l.is_free_preview)) ?? lessons[0];
-  const idx = current ? lessons.indexOf(current) : -1;
-  const moduleOf = current ? modules.find((m) => m.id === current.module_id) : undefined;
-  const canPlay = !!current && (enrolled || current.is_free_preview);
-  // TODO(antigravity, Phase 3): for non-enrolled free previews, fetch that single lesson's video_url server-side.
-  const source = canPlay ? toPlayerSource(current.video_url) : null;
-  const pct = lessons.length ? Math.round((completed.size / lessons.length) * 100) : 0;
-  const isDone = current ? completed.has(current.id) : false;
-  const list = <LessonList modules={modules} currentId={current?.id} completed={completed} enrolled={enrolled} />;
+  if (!enrolled) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <h1 className="text-2xl font-bold">{course.title}</h1>
+        {course.subtitle ? <p className="mt-1 text-muted-foreground">{course.subtitle}</p> : null}
+        <Panel className="mt-6">
+          <p className="text-sm text-muted-foreground">You&apos;re viewing this course in preview mode. {preview ? "Watch the free preview lesson, then enroll to unlock everything." : "Enroll to unlock all lessons, practice and resources."}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {preview ? <ButtonLink href={`/learn/${slug}/lesson/${preview.id}`}><PlayCircle className="h-4 w-4" aria-hidden />Watch preview</ButtonLink> : null}
+            <ButtonLink href={`/courses/${slug}`} variant="outline">View enrollment options</ButtonLink>
+          </div>
+        </Panel>
+      </div>
+    );
+  }
+
+  const [practice, plan] = await Promise.all([getPractice(course.id, ctx.userId), getPlan(ctx.userId, course.id)]);
+  const next = ctx.nextLesson;
+  const nextModule = next ? ctx.modules.find((m) => m.id === next.module_id) : null;
+  const remainingLessons = ctx.lessons.filter((l) => !ctx.completed.has(l.id));
+  const remainingSecs = remainingLessons.reduce((s, l) => s + l.duration_seconds, 0);
+  const schedule = plan
+    ? buildPlan({ remainingLessons, remainingQuestions: practice.questions.filter((q) => q.state !== "correct"), targetDate: plan.target_date, hoursPerDay: plan.hours_per_day })
+    : null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background px-4">
-        <Logo className="hidden sm:inline-flex" />
-        <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />
-        <CourseNavDrawer label={course.title}>
-          {enrolled ? <div className="border-b border-border p-4"><p className="mb-2 text-xs text-muted-foreground">{pct}% complete · {completed.size}/{lessons.length} lessons</p><ProgressBar value={pct} size="sm" /></div> : null}
-          {list}
-        </CourseNavDrawer>
-        <p className="min-w-0 flex-1 truncate text-sm font-semibold">{course.title}</p>
-        {enrolled ? (
-          <div className="hidden w-40 items-center gap-2 md:flex">
-            <ProgressBar value={pct} size="sm" className="flex-1" label="Course progress" />
-            <span className="text-xs text-muted-foreground tabular-nums">{pct}%</span>
-          </div>
-        ) : (
-          <ButtonLink href={`/courses/${slug}`} size="sm">Enroll</ButtonLink>
-        )}
-        <Link href={enrolled ? "/dashboard" : `/courses/${slug}`} aria-label="Exit course" className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"><X className="h-4 w-4" /></Link>
-      </header>
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div>
+        <p className="text-xs font-medium text-primary">{course.track}</p>
+        <h1 className="mt-1 text-2xl font-bold">{course.title}</h1>
+        {course.subtitle ? <p className="mt-1 text-muted-foreground">{course.subtitle}</p> : null}
+      </div>
 
-      <div className="grid flex-1 lg:grid-cols-[320px_1fr]">
-        {/* Desktop lesson navigation */}
-        <aside aria-label="Course content" className="hidden border-r border-border lg:block">
-          <div className="sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
-            <div className="border-b border-border p-4">
-              <p className="text-sm font-semibold">Course content</p>
-              {enrolled ? <><ProgressBar value={pct} size="sm" className="mt-3" label="Course progress" /><p className="mt-2 text-xs text-muted-foreground">{completed.size} of {lessons.length} lessons complete</p></> : <p className="mt-1 text-xs text-muted-foreground">Preview lessons are free. Enroll to unlock everything.</p>}
-            </div>
-            {list}
-          </div>
-        </aside>
-
-        <main id="main" className="min-w-0">
-          {!current ? (
-            <div className="p-6"><EmptyState title="No lessons yet" description="This course's lessons haven't been published yet." /></div>
+      {/* Continue */}
+      <section className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:p-6">
+        <ProgressRing value={progress.percent} size={84} label={`Course ${progress.percent}% complete`} />
+        <div className="min-w-0 flex-1">
+          {next ? (
+            <>
+              <p className="text-xs font-semibold tracking-wide text-subtle-foreground uppercase">{progress.completed ? "Continue learning" : "Start learning"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{nextModule?.title}</p>
+              <h2 className="text-lg font-semibold">{next.title}</h2>
+            </>
           ) : (
             <>
-              <div className="bg-foreground">
-                <div className="mx-auto aspect-video max-h-[70vh] w-full max-w-6xl">
-                  {source?.kind === "iframe" ? (
-                    <iframe src={source.src} title={current.title} className="h-full w-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
-                  ) : source?.kind === "file" ? (
-                    <video src={source.src} controls className="h-full w-full" />
-                  ) : (
-                    <div className="grid h-full place-items-center p-6 text-center text-white">
-                      <div>
-                        <Lock className="mx-auto h-8 w-8 opacity-70" aria-hidden />
-                        <p className="mt-3 font-semibold">{canPlay ? "Video not available yet" : "This lesson is locked"}</p>
-                        <p className="mt-1 text-sm opacity-70">{canPlay ? "Check back soon or contact support." : "Enroll in the course to watch every lesson."}</p>
-                        {!canPlay ? <Link href={`/courses/${slug}`} className="mt-4 inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-semibold hover:bg-primary-hover">View enrollment options</Link> : null}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">{moduleOf ? `${moduleOf.title} · ` : ""}Lesson {idx + 1} of {lessons.length}</p>
-                    <h1 className="mt-1 text-xl font-bold sm:text-2xl">{current.title}</h1>
-                    {current.duration_seconds ? <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><Clock className="h-4 w-4" aria-hidden />{formatDuration(current.duration_seconds)}</p> : null}
-                  </div>
-                  {enrolled ? (
-                    <form action={toggleComplete.bind(null, current.id, slug, isDone)}>
-                      <button className={buttonClass({ variant: isDone ? "outline" : "primary" }, isDone ? "text-success" : undefined)}>
-                        <CheckCircle2 className="h-4 w-4" aria-hidden />{isDone ? "Completed" : "Mark as complete"}
-                      </button>
-                    </form>
-                  ) : null}
-                </div>
-
-                <Tabs
-                  className="mt-6"
-                  tabs={[
-                    {
-                      id: "overview",
-                      label: "Overview",
-                      content: current.content_text ? (
-                        <div className="text-[15px] leading-relaxed whitespace-pre-line text-muted-foreground">{current.content_text}</div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No written notes for this lesson.</p>
-                      ),
-                    },
-                    // TODO(antigravity, Phase 3/5): Notes (lesson_notes), Resources, Q&A tabs.
-                    { id: "notes", label: "Notes", content: <EmptyState title="Personal notes are coming soon" description="You'll be able to save notes for each lesson." /> },
-                    { id: "resources", label: "Resources", content: <EmptyState title="No resources for this lesson" /> },
-                  ]}
-                />
-
-                <nav aria-label="Lesson navigation" className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-5">
-                  {idx > 0 ? <ButtonLink href={`?lesson=${lessons[idx - 1].id}`} variant="outline"><ChevronLeft className="h-4 w-4" aria-hidden />Previous</ButtonLink> : <span />}
-                  {idx < lessons.length - 1 ? <ButtonLink href={`?lesson=${lessons[idx + 1].id}`}>Next lesson<ChevronRight className="h-4 w-4" aria-hidden /></ButtonLink> : null}
-                </nav>
-              </div>
+              <p className="text-xs font-semibold tracking-wide text-success uppercase">All lessons complete</p>
+              <h2 className="mt-1 text-lg font-semibold">You&apos;ve finished every lesson in this course.</h2>
             </>
           )}
-        </main>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {progress.completed} of {progress.total} lessons complete{remainingSecs ? ` · ${formatDuration(remainingSecs)} remaining` : ""}
+          </p>
+        </div>
+        {next ? <ButtonLink href={`/learn/${slug}/lesson/${next.id}`}><PlayCircle className="h-4 w-4" aria-hidden />{progress.completed ? "Continue" : "Start"}</ButtonLink> : null}
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+        <div className="min-w-0 space-y-6">
+          <Panel title="Module progress">
+            {ctx.progress.modules.length ? (
+              <ul className="space-y-4">
+                {ctx.progress.modules.map((m, i) => (
+                  <li key={m.id}>
+                    <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                      <span className="min-w-0 truncate"><span className="text-subtle-foreground">{i + 1}.</span> {m.title}</span>
+                      <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+                        {m.percent === 100 ? <CheckCircle2 className="h-3.5 w-3.5 text-success" aria-hidden /> : null}
+                        {m.completed}/{m.total}
+                      </span>
+                    </div>
+                    <ProgressBar value={m.percent} size="sm" tone={m.percent === 100 ? "success" : "primary"} label={`${m.title} progress`} />
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-sm text-muted-foreground">Lessons will appear here once they are published.</p>}
+          </Panel>
+
+          <Panel title="Learning plan" action={plan && schedule ? <span className={`text-xs font-medium ${schedule.onTrack ? "text-success" : "text-warning"}`}>{schedule.onTrack ? "On track" : "Needs more time per day"}</span> : null}>
+            <LearningPlanForm slug={slug} courseId={course.id} initial={plan} />
+            {schedule ? (
+              schedule.days.length ? (
+                <ol className="mt-5 divide-y divide-border rounded-lg border border-border">
+                  {schedule.days.slice(0, 5).map((d, i) => (
+                    <li key={d.date} className="flex gap-4 px-4 py-3">
+                      <div className="w-20 shrink-0">
+                        <p className="text-sm font-semibold">{i === 0 ? "Today" : i === 1 ? "Tomorrow" : new Date(d.date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}</p>
+                        <p className="text-xs text-muted-foreground">~{d.minutes} min</p>
+                      </div>
+                      <ul className="min-w-0 flex-1 space-y-1 text-sm">
+                        {d.lessons.length ? <li className="flex items-start gap-2"><PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-subtle-foreground" aria-hidden /><span className="min-w-0">{d.lessons.length} lesson{d.lessons.length > 1 ? "s" : ""}: <span className="text-muted-foreground">{d.lessons.map((l) => l.title).join(", ")}</span></span></li> : null}
+                        {d.questions ? <li className="flex items-center gap-2"><Code2 className="h-4 w-4 shrink-0 text-subtle-foreground" aria-hidden />{d.questions} practice question{d.questions > 1 ? "s" : ""}</li> : null}
+                      </ul>
+                    </li>
+                  ))}
+                </ol>
+              ) : <p className="mt-4 text-sm text-success">Nothing left to schedule — you&apos;re done.</p>
+            ) : <p className="mt-3 text-xs text-muted-foreground">Set a target date to get a day-by-day plan based on your remaining lessons and practice. It updates automatically as you progress.</p>}
+          </Panel>
+        </div>
+
+        <div className="space-y-6">
+          <Panel title="Practice">
+            {practice.stats.total ? (
+              <>
+                <p className="text-2xl font-bold tabular-nums">{practice.stats.solved}<span className="text-base font-medium text-muted-foreground"> / {practice.stats.total}</span></p>
+                <p className="text-sm text-muted-foreground">questions solved</p>
+                <ProgressBar value={practice.stats.percent} size="sm" className="mt-3" label="Practice progress" />
+                <Link href={`/learn/${slug}/practice`} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">Go to practice <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+              </>
+            ) : <p className="flex gap-2.5 text-sm text-muted-foreground"><Code2 className="h-4 w-4 shrink-0" aria-hidden />Practice content will appear here when your instructor publishes it.</p>}
+          </Panel>
+          <Panel title="Projects">
+            <p className="flex gap-2.5 text-sm text-muted-foreground"><FolderGit2 className="h-4 w-4 shrink-0" aria-hidden />{course.includes.projects ? `This course includes ${course.includes.projects} project${course.includes.projects > 1 ? "s" : ""}. Project submission opens soon.` : "Projects for this course will appear here."}</p>
+          </Panel>
+          <Panel title="Certificate">
+            <p className="flex gap-2.5 text-sm text-muted-foreground"><Award className="h-4 w-4 shrink-0" aria-hidden />Certificate requirements will be shown here once they are configured for this course.</p>
+            <Link href={`/learn/${slug}/certificate`} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">Details <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+          </Panel>
+          {plan ? null : (
+            <Panel>
+              <p className="flex gap-2.5 text-sm text-muted-foreground"><CalendarDays className="h-4 w-4 shrink-0" aria-hidden />Tip: create a learning plan to get a daily schedule.</p>
+            </Panel>
+          )}
+        </div>
       </div>
     </div>
   );

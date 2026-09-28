@@ -12,8 +12,12 @@ npm run dev                  # http://localhost:3000
 
 ## Database
 Your existing Supabase project already has the base schema (the older files in `supabase/migrations/`).
-Run only the NEW file in the Supabase SQL editor:
-`supabase/migrations/20260928120000_marketplace_extensions.sql`
+Run these NEW files once, in order, in the Supabase SQL editor:
+1. `supabase/migrations/20260928120000_marketplace_extensions.sql`
+2. `supabase/migrations/20260929090000_learning_portal_practice.sql` — **security fixes** + learning portal tables
+
+Then add practice questions/resources with `supabase/examples/add_practice_content.sql` (until the admin panel exists).
+Security model: `docs/SECURITY.md`.
 
 ## Deploy
 Import the GitHub repo in Vercel, add the env vars from `.env.example`, deploy.
