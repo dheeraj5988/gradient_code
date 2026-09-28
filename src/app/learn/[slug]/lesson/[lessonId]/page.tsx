@@ -11,7 +11,8 @@ import { NewNoteForm, NoteItem } from "@/components/learn/notes-panel";
 import { ResourceCard } from "@/components/resources/resource-card";
 import { getLearningContext, getLessonContent, getNotes, getResources, getVideoPosition, resourceHref } from "@/lib/data/learning";
 import { formatDuration } from "@/lib/utils";
-import { toPlayerSource } from "@/lib/video";
+import { toPlayerSource, type PlayerSource } from "@/lib/video";
+import { isDriveConfigured } from "@/lib/google-drive/client";
 
 export default async function LessonPage({ params }: { params: Promise<{ slug: string; lessonId: string }> }) {
   const { slug, lessonId } = await params;
@@ -29,7 +30,9 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
 
   // The DATABASE decides whether content is returned (enrolled / admin / free preview).
   const content = enrolled || lesson.is_free_preview ? await getLessonContent(lesson.id) : null;
-  const source = content ? toPlayerSource(content.video_url) : null;
+  // Drive lessons stream through the access-checked /api/video proxy (native player → progress & resume work).
+  // Without Drive credentials we fall back to the legacy Drive preview iframe.
+  const source: PlayerSource = !content ? null : content.has_drive_file && isDriveConfigured() ? { kind: "file", src: `/api/video/${lesson.id}` } : toPlayerSource(content.video_url);
   const [position, notes, resources] = enrolled
     ? await Promise.all([getVideoPosition(ctx.userId, lesson.id), getNotes(ctx.userId, ctx.course.id, { lessonId: lesson.id }), getResources(ctx.course.id)])
     : [0, [], []];

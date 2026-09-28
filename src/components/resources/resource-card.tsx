@@ -15,7 +15,7 @@ const META: Record<Resource["resource_type"], { icon: typeof FileText; label: st
 
 export function ResourceCard({ r, href, context }: { r: Resource; href: string | null; context?: string | null }) {
   const m = META[r.resource_type];
-  const download = r.is_downloadable && !!r.file_path;
+  const download = r.is_downloadable && !!(r.file_path || r.drive_file_id);
   return (
     <article className="flex gap-4 rounded-xl border border-border bg-card p-4">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"><m.icon className="h-5 w-5" aria-hidden /></span>

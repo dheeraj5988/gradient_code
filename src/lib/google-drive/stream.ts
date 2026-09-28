@@ -1,5 +1,5 @@
 import "server-only";
-import { getGoogleDriveAccessToken } from "./client";
+import { DRIVE_API_BASE, driveAuth } from "./client";
 
 export interface StreamResult {
   status: number;
@@ -7,56 +7,41 @@ export interface StreamResult {
   body: ReadableStream<Uint8Array> | null;
 }
 
+const RANGE_RE = /^bytes=\d*-\d*$/;
+
 /**
- * Proxies a video stream from Google Drive with full HTTP Range request forwarding.
- * Supports seeking and scrubbing in native HTML5 video elements.
+ * Proxies a Drive file with HTTP Range forwarding (206 Partial Content → seeking works).
+ * Upstream error bodies are never forwarded (they can contain file metadata).
  */
-export async function streamDriveFile(
-  fileId: string,
-  rangeHeader: string | null
-): Promise<StreamResult> {
-  const token = await getGoogleDriveAccessToken();
-  const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
-
-  const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`);
+export async function streamDriveFile(fileId: string, rangeHeader: string | null, opts: { mimeType?: string | null; downloadName?: string | null } = {}): Promise<StreamResult> {
+  const { headers: auth, key } = await driveAuth();
+  const url = new URL(`${DRIVE_API_BASE}/drive/v3/files/${encodeURIComponent(fileId)}`);
   url.searchParams.set("alt", "media");
-  if (!token && apiKey) {
-    url.searchParams.set("key", apiKey);
+  url.searchParams.set("supportsAllDrives", "true");
+  if (key) url.searchParams.set("key", key);
+
+  const upstreamHeaders: Record<string, string> = { ...auth };
+  if (rangeHeader && RANGE_RE.test(rangeHeader)) upstreamHeaders["Range"] = rangeHeader;
+
+  const upstream = await fetch(url.toString(), { headers: upstreamHeaders, cache: "no-store" });
+  const headers = new Headers();
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("X-Content-Type-Options", "nosniff");
+
+  if (!upstream.ok && upstream.status !== 206) {
+    void upstream.body?.cancel().catch(() => {}); // never block on closing the upstream error body
+    headers.set("Content-Type", "application/json");
+    const status = upstream.status === 416 ? 416 : upstream.status === 404 ? 404 : 502;
+    if (status === 416) { const cr = upstream.headers.get("content-range"); if (cr) headers.set("Content-Range", cr); }
+    return { status, headers, body: new Blob([JSON.stringify({ error: status === 404 ? "Media not found." : status === 416 ? "Range not satisfiable." : "Upstream media error." })]).stream() };
   }
 
-  const upstreamHeaders: Record<string, string> = {};
-  if (token) {
-    upstreamHeaders["Authorization"] = `Bearer ${token}`;
+  headers.set("Accept-Ranges", "bytes");
+  headers.set("Content-Type", opts.mimeType || upstream.headers.get("content-type") || "application/octet-stream");
+  for (const h of ["content-length", "content-range", "last-modified", "etag"]) {
+    const v = upstream.headers.get(h);
+    if (v) headers.set(h, v);
   }
-  if (rangeHeader) {
-    upstreamHeaders["Range"] = rangeHeader;
-  }
-
-  const upstreamRes = await fetch(url.toString(), {
-    headers: upstreamHeaders,
-    cache: "no-store",
-  });
-
-  const responseHeaders = new Headers();
-  responseHeaders.set("Accept-Ranges", "bytes");
-  responseHeaders.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
-
-  const contentType = upstreamRes.headers.get("content-type") || "video/mp4";
-  responseHeaders.set("Content-Type", contentType);
-
-  const contentLength = upstreamRes.headers.get("content-length");
-  if (contentLength) {
-    responseHeaders.set("Content-Length", contentLength);
-  }
-
-  const contentRange = upstreamRes.headers.get("content-range");
-  if (contentRange) {
-    responseHeaders.set("Content-Range", contentRange);
-  }
-
-  return {
-    status: upstreamRes.status,
-    headers: responseHeaders,
-    body: upstreamRes.body,
-  };
+  if (opts.downloadName) headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(opts.downloadName)}`);
+  return { status: upstream.status, headers, body: upstream.body };
 }

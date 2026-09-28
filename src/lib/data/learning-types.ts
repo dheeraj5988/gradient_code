@@ -42,6 +42,7 @@ export type Resource = {
   resource_type: "pdf" | "notes" | "cheat_sheet" | "external_link" | "code_repository" | "dataset" | "template" | "presentation" | "recording";
   url: string | null;
   file_path: string | null;
+  drive_file_id?: string | null;
   is_downloadable: boolean;
   order_index: number;
 };

@@ -100,12 +100,16 @@ export const getLearningContext = cache(async (slug: string): Promise<LearningCo
 });
 
 /** Protected lesson content — database decides (enrolled / admin / free preview). */
-export const getLessonContent = cache(async (lessonId: string) => {
-  if (IS_DEMO) return { video_url: null as string | null, content_text: null as string | null, join_url: null as string | null };
+export type LessonContent = { video_url: string | null; content_text: string | null; join_url: string | null; video_provider: string | null; has_drive_file: boolean };
+
+export const getLessonContent = cache(async (lessonId: string): Promise<LessonContent | null> => {
+  if (IS_DEMO) return { video_url: null, content_text: null, join_url: null, video_provider: null, has_drive_file: false };
   const supabase = await createClient();
   const { data } = await supabase.rpc("lesson_content", { _lesson_id: lessonId });
   const row = (data as any[] | null)?.[0];
-  return row ? { video_url: row.video_url as string | null, content_text: row.content_text as string | null, join_url: row.join_url as string | null } : null;
+  return row
+    ? { video_url: row.video_url ?? null, content_text: row.content_text ?? null, join_url: row.join_url ?? null, video_provider: row.video_provider ?? null, has_drive_file: !!row.drive_file_id }
+    : null;
 });
 
 export async function getVideoPosition(userId: string | null, lessonId: string) {
@@ -283,7 +287,7 @@ export async function getResources(courseId: string): Promise<Resource[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("course_resources")
-    .select("id,course_id,module_id,lesson_id,title,description,resource_type,url,file_path,is_downloadable,order_index")
+    .select("id,course_id,module_id,lesson_id,title,description,resource_type,url,file_path,drive_file_id,is_downloadable,order_index")
     .eq("course_id", courseId)
     .eq("is_published", true)
     .order("order_index");
@@ -294,6 +298,7 @@ export async function getResources(courseId: string): Promise<Resource[]> {
 /** Short-lived signed URL for a private Storage file (RLS on course_resources already checked access). */
 export async function resourceHref(r: Resource): Promise<string | null> {
   if (r.url) return r.url;
+  if (r.drive_file_id) return `/api/resource/${r.id}`; // access-checked proxy; Drive link never sent to the browser
   if (!r.file_path || IS_DEMO) return null;
   const supabase = await createClient();
   const { data } = await supabase.storage.from("course-resources").createSignedUrl(r.file_path, 60 * 10, r.is_downloadable ? { download: true } : undefined);
