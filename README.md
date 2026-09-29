@@ -23,6 +23,7 @@ npm run dev                  # http://localhost:3000
 6. `supabase/migrations/20260930100000_legal_pages.sql` — editable legal pages + business details
 7. `supabase/migrations/20260930110000_certificates.sql` — certificate policies, eligibility, issuance, verification, revocation
 8. `supabase/migrations/20260930120000_internships.sql` — internship apply/withdraw, eligibility, pipeline, timeline
+9. `supabase/migrations/20260930130000_email_verified_gating.sql` — certificates require a verified email
 
 Then make yourself admin (see `docs/ADMIN_GUIDE.md`).
 
@@ -38,10 +39,12 @@ Then make yourself admin (see `docs/ADMIN_GUIDE.md`).
 
 ## Deploy (Vercel)
 Import the GitHub repo, add the env vars above (Production + Preview), deploy. Node 20+. `npm run build` must pass locally first.
-In Supabase → Authentication → URL configuration add your Vercel URL + `/auth/callback`.
+In Supabase → Authentication → URL configuration add your Vercel URL + `/auth/callback` (used by Google sign-in only).
+Email verification and password reset use 6-digit codes — follow `docs/EMAIL_OTP_SETUP.md` (required, or signup emails will contain a link instead of a code).
 
 ## Docs
 - `docs/CLAUDE_CURRENT_STATE.md` — current state, blockers, next steps
+- `docs/EMAIL_OTP_SETUP.md` · `docs/EMAIL_PROVIDER_MIGRATION.md` — 6-digit email codes, moving to your own email domain
 - `docs/PAYMENTS_SETUP.md` — Paypur setup, go-live checklist
 - `docs/ADMIN_GUIDE.md` · `docs/COURSE_IMPORT_GUIDE.md` · `docs/GOOGLE_DRIVE_SETUP.md`
 - `docs/PRODUCT_SPEC.md` — source of truth

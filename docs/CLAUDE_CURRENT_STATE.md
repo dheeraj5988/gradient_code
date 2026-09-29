@@ -7,7 +7,7 @@ Next.js **15.5.26** App Router · React 19 · TypeScript strict · Tailwind v4 (
 
 ## 2. Routes
 - **Public:** `/`, `/courses`, `/courses/[slug]`, `/instructors/[slug]`, `/internships`, `/internships/[slug]`, `/pricing`, `/about`, `/verify` (form only), placeholders `/programs /projects /resources /careers /contact /terms /privacy /refund`.
-- **Auth:** `/login`, `/signup`, `/forgot-password` (placeholder), `/auth/callback`, `/auth/signout`.
+- **Auth:** `/login`, `/signup`, `/verify-email` (6-digit code), `/forgot-password` + `/reset-password` (6-digit code), `/auth/callback` (Google only), `/auth/signout`.
 - **Learner:** `/dashboard` (+ `/courses /certificates /applications /profile`), `/learn/[slug]` (overview, `lesson/[id]`, `practice`, `practice/[id]`, `practice/saved`, `resources`, `notes`, `interview`, `projects`, `certificate`, `internship`).
 - **Admin (Phase 3):** `/admin`, `/admin/courses` (+`new`, `[id]/edit`, `[id]/curriculum`, `[id]/lessons/[lessonId]`), `/admin/import`, `/admin/topics`, `/admin/questions`, `/admin/resources`, `/admin/students` (+`[id]`), `/admin/enrollments`, `/admin/instructors`, `/admin/reviews`, `/admin/orders`, `/admin/certificates`, `/admin/audit`, `/admin/settings`.
 - **API:** `/api/video/[lessonId]` (authorised Drive stream), `/api/resource/[resourceId]` (authorised Drive file), `/api/paypur/callback` (verified payment return), `/r/[code]` (referral link).
@@ -27,7 +27,7 @@ Fresh projects use `supabase/master_schema.sql` (all of the above up to Drive me
 All access decisions are in the database (RLS + SECURITY DEFINER RPCs `can_access_course`, `course_outline`, `lesson_content`, `enroll_free`, `submit_practice_answer`, `practice_review`). Admin writes require `has_role(uid,'admin')` in RLS **and** a server-side check in every admin page/action. Details and test matrix: `docs/SECURITY.md`.
 
 ## 7. Authentication
-Supabase email/password + Google OAuth (browser client), cookie session refreshed in `middleware.ts`; `/dashboard`, `/admin`, `/checkout` require login; `/learn` is public so free previews work (content gated by DB). Password reset not built.
+Supabase email/password + Google OAuth (browser client), cookie session refreshed in `middleware.ts`; `/dashboard`, `/admin`, `/checkout` require login; `/learn` is public so free previews work (content gated by DB). Password reset: 6-digit code flow (section 25).
 
 ## 8. Course system
 Courses have `status` (draft/published/archived, synced to legacy `is_published` by trigger) and `is_demo`. Demo courses are hidden from the public catalog. The 5 Lovable placeholder courses (no real video) were auto-flagged `is_demo`. Real courses: `full-stack-web-development-with-ai-ml` (21 modules, 224 Drive videos + 76 file "lessons"), `generative-ai-llms-agents-mcp` (8 modules, 46 lessons), `data-science-python-with-ai` (21 modules, 31 Drive videos).
@@ -48,7 +48,7 @@ Implemented: dashboard (real counts), course CRUD + publish validation + duplica
 Certificates: see section 23. Internships: see section 24. Referrals + Payments: see the Payments & referrals section below.
 
 ## 17. TODOs
-`grep -rn "TODO(antigravity" src` — player notes/resources polish, internships filters/apply, certificate list/verify, profile editor, password reset, coupon validation, Razorpay, legal page copy.
+`grep -rn "TODO(antigravity" src` — player notes/resources polish, internships filters/apply, certificate list/verify, profile editor, coupon validation.
 
 ## 18. Technical debt
 - 76 code/asset files in the Full Stack course were imported by Lovable as **text lessons** (they inflate lesson counts). Convert them to `course_resources` from the admin (planned tool) — nothing was changed automatically.
@@ -88,3 +88,10 @@ Certificate eligibility + issuance → internship applications + admin pipeline 
 - Timeline in `internship_application_events` (visible notes for the applicant; `internal` notes admin-only via RLS). Applicants can withdraw while applied/shortlisted/interview.
 - Admin: `/admin/internships` (CRUD, publish), `/admin/internships/applications` (pipeline: applied → shortlisted → interview → offered/rejected, with notes). Learner: `/dashboard/applications` (apply + tracker), internship detail shows the right state, `/learn/[slug]/internship` shows real eligibility.
 - Not built: email/in-app notifications, resume file upload, screening questions, interview scheduling.
+
+## 25. Email OTP auth (added 2026-09-30)
+- **Signup** → Supabase sends a 6-digit code (template uses `{{ .Token }}`) → `/verify-email` (6 boxes, paste/autofill, 60 s resend cooldown persisted in sessionStorage, 5-wrong-attempt lock) → `verifyOtp({type:'signup'})` → session → `/dashboard`. Login with an unverified account continues on the same screen.
+- **Password reset** → `/forgot-password` → `/reset-password` (code → new password → success). Uses `verifyOtp({type:'recovery'})` then `updateUser`. Same response whether or not the account exists.
+- **Gating:** middleware sends unverified users away from `/dashboard`, `/admin`, `/checkout` to `/verify-email`; `startPayment` refuses unverified users; `issue_certificate()` raises `email_not_verified` (DB, migration `20260930130000`). Google sign-ins are already verified.
+- **Badge:** Profile page shows Verified + date (`email_confirmed_at`); dashboard sidebar shows a check.
+- `/auth/callback` now serves Google sign-in only. Setup: `docs/EMAIL_OTP_SETUP.md`; moving to your own domain: `docs/EMAIL_PROVIDER_MIGRATION.md`.

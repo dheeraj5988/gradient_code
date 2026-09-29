@@ -13,7 +13,7 @@
 |---|---|
 | Marketing | `/`, `/courses`, `/courses/[slug]`, `/instructors/[slug]`, `/internships`, `/internships/[slug]`, `/pricing`, `/about`, `/verify` |
 | Placeholder ("Coming soon", noindex) | `/programs`, `/projects`, `/resources`, `/careers`, `/contact`, `/terms`, `/privacy`, `/refund` |
-| Auth | `/login`, `/signup`, `/forgot-password` (placeholder), `/auth/callback`, `/auth/signout` |
+| Auth | `/login`, `/signup`, `/verify-email`, `/forgot-password`, `/reset-password`, `/auth/callback` (Google), `/auth/signout` |
 | Learner | `/dashboard`, `/dashboard/courses`, `/dashboard/certificates`, `/dashboard/applications`, `/dashboard/profile`, `/learn/[slug]` |
 | Commerce / admin | `/checkout/[slug]` (UI only), `/api/razorpay/order` (501 stub), `/admin` (role-gated placeholder) |
 
