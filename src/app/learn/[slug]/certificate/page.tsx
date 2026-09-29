@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Award, Check, Circle } from "lucide-react";
+import { Award, Check, Circle } from "lucide-react";
 import { Panel, PortalPage } from "@/components/learn/portal";
 import { ClaimCertificate } from "@/components/learn/claim-certificate";
 import { ButtonLink } from "@/components/ui/button";
 import { getLearningContext } from "@/lib/data/learning";
 import { getEligibility, type Progress } from "@/lib/data/certificates";
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { IS_DEMO } from "@/lib/supabase/env";
 
 export const metadata = { title: "Certificate" };
@@ -27,8 +27,6 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
   const ctx = await getLearningContext(slug);
   if (!ctx) notFound();
   const el = ctx.access === "enrolled" && !IS_DEMO ? await getEligibility(ctx.course.id) : null;
-  const authUser = el ? await getUser() : null;
-  const unverified = !!authUser && !authUser.email_confirmed_at;
   let name = "";
   if (el && ctx.userId) { const { data } = await (await createClient()).from("profiles").select("full_name").eq("id", ctx.userId).maybeSingle(); name = data?.full_name ?? ""; }
   return (
@@ -53,8 +51,6 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
                 <p className="mt-1 font-mono text-xs">{el.certificate.number}</p>
                 <div className="mt-3 flex flex-wrap gap-2"><ButtonLink size="sm" href={`/certificate/${el.certificate.number}`}>View & download</ButtonLink><ButtonLink size="sm" variant="outline" href={`/verify/${el.certificate.number}`}>Verification page</ButtonLink></div>
               </div>
-            ) : el.eligible && unverified ? (
-              <p role="status" className="flex items-center gap-2 rounded-lg border border-warning/25 bg-warning-soft px-3 py-2 text-sm text-warning"><AlertCircle className="h-4 w-4 shrink-0" aria-hidden />Please verify your email. <Link className="font-medium underline" href={`/verify-email?reason=required&next=/learn/${slug}/certificate`}>Verify now</Link></p>
             ) : el.eligible ? (
               <div><p className="mb-3 text-sm font-medium text-success">You&apos;ve met every requirement.</p><ClaimCertificate courseId={ctx.course.id} slug={slug} defaultName={name} /></div>
             ) : (

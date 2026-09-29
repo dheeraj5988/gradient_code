@@ -40,7 +40,6 @@ export async function startPayment(courseId: string, slug: string, form: FormDat
   if (IS_DEMO) back(slug, "Payments need a configured database.");
   const user = await getUser();
   if (!user) redirect(`/login?next=/checkout/${slug}`);
-  if (!user.email_confirmed_at) redirect(`/verify-email?reason=required&next=${encodeURIComponent(`/checkout/${slug}`)}`); // unverified accounts cannot buy
 
   const firstname = String(form.get("firstname") ?? "").trim().replace(/\s+/g, " ");
   const phone = String(form.get("phone") ?? "").replace(/[\s-]/g, "").replace(/^(\+91|91)/, "");

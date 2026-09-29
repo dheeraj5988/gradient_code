@@ -29,15 +29,6 @@ export async function middleware(request: NextRequest) {
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
-  // Signed in but the email isn't verified yet (Google sign-ins arrive already verified).
-  if (data.user && !data.user.email_confirmed_at && PROTECTED.some((p) => path.startsWith(p))) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/verify-email";
-    url.search = "";
-    url.searchParams.set("reason", "required");
-    url.searchParams.set("next", path);
-    return NextResponse.redirect(url);
-  }
   return response;
 }
 

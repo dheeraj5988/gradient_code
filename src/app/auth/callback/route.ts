@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
+import { createClient } from "@/lib/supabase/server";
 
-/**
- * OAuth (Google) return URL. Email verification and password reset use 6-digit codes on the site
- * (/verify-email, /reset-password) and do not pass through here.
- */
+/** Google OAuth and password-recovery links both land here: exchange the code for a session, then go to `next`. */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
