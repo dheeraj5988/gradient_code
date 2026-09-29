@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/coming-soon";
+import { LegalPage } from "@/components/legal-page";
 
-export const metadata: Metadata = { title: "Privacy policy", robots: { index: false } };
+export const metadata: Metadata = { title: "Privacy policy" };
+export const dynamic = "force-dynamic";
 
 export default function Page() {
-  return <ComingSoon title="Privacy policy" description="How Gradient Code collects, uses and protects your data." />;
+  return <LegalPage slug="privacy" fallbackTitle="Privacy policy" />;
 }

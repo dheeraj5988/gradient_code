@@ -61,7 +61,7 @@ Certificates: table + read-only admin list; no eligibility engine or issuance (s
 1. Run migration `20260929180000_admin_cms.sql` on the Supabase project (on top of `master_schema.sql` for the new project).
 2. Create/confirm an admin user (`user_roles.role = 'admin'`).
 3. Configure Google service-account credentials and share course folders with it (otherwise Drive videos use the preview iframe).
-4. Legal pages (terms, privacy, refund) still have no content.
+4. Legal pages: draft templates are seeded and editable in Admin → Legal pages. **Owner must fill business details and have the text reviewed** (public pages show a “being finalised” notice until marked reviewed).
 5. Payments: run migration `20260930090000_payments_referrals.sql`, set `SUPABASE_SERVICE_ROLE_KEY` in Vercel, add the Paypur key/salt in Admin → Payments, then do one real ₹1 test purchase (see `docs/PAYMENTS_SETUP.md`).
 
 ## 20. Recommended next order
@@ -73,3 +73,6 @@ Certificate eligibility + issuance → internship applications + admin pipeline 
 - **Security:** students can no longer insert/update orders (old "orders insert" policy removed); `finalize_paid_order`/`fail_order` are service-role only; `payment_settings` has no client access.
 - **Referrals:** `/dashboard/referrals` (code, link `/r/CODE`, balances, payout request), `/admin/referrals` (custom codes, payouts). Commission only from verified payments, 14-day hold (configurable), append-only ledger, self-referral blocked.
 - **Unverified against the live gateway:** exact success/failure status strings and the status-API response shape (parser is tolerant; the signed callback is the fallback); Key → `X-PAYPUR-KEY`, Salt → signing secret mapping. Tested against a mock built from the supplied docs only.
+
+## 22. Legal pages (added 2026-09-30)
+`site_settings` (business details) + `site_pages` (terms/privacy/refund, Markdown subset, `reviewed` flag) — public read, admin write (RLS). Public routes `/terms /privacy /refund` render them (safe renderer, no raw HTML); `/contact` shows the support details once set. Unset placeholders render as “[to be confirmed]” — nothing is invented. Text is a generic draft, **not legal advice**.

@@ -20,6 +20,7 @@ npm run dev                  # http://localhost:3000
 3. `supabase/migrations/20260929120000_drive_video_metadata.sql` — Drive video columns
 4. `supabase/migrations/20260929180000_admin_cms.sql` — admin CMS, course status/demo flag, audit log
 5. `supabase/migrations/20260930090000_payments_referrals.sql` — payments (Paypur), orders lockdown, referrals, payouts
+6. `supabase/migrations/20260930100000_legal_pages.sql` — editable legal pages + business details
 
 Then make yourself admin (see `docs/ADMIN_GUIDE.md`).
 

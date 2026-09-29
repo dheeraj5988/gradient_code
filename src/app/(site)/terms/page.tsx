@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/coming-soon";
+import { LegalPage } from "@/components/legal-page";
 
-export const metadata: Metadata = { title: "Terms of use", robots: { index: false } };
+export const metadata: Metadata = { title: "Terms of use" };
+export const dynamic = "force-dynamic";
 
 export default function Page() {
-  return <ComingSoon title="Terms of use" description="The terms that govern your use of Gradient Code." />;
+  return <LegalPage slug="terms" fallbackTitle="Terms of use" />;
 }
