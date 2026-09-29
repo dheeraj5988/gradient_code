@@ -29,6 +29,7 @@ export async function streamDriveFile(fileId: string, rangeHeader: string | null
   headers.set("X-Content-Type-Options", "nosniff");
 
   if (!upstream.ok && upstream.status !== 206) {
+    console.error("[drive-stream] upstream error: op=media status=" + upstream.status + " range=" + (rangeHeader ? "yes" : "no")); // status only — never tokens or bodies
     void upstream.body?.cancel().catch(() => {}); // never block on closing the upstream error body
     headers.set("Content-Type", "application/json");
     const status = upstream.status === 416 ? 416 : upstream.status === 404 ? 404 : 502;

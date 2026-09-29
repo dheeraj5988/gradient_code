@@ -1,6 +1,7 @@
 import { CheckCircle2, CircleSlash } from "lucide-react";
 import { AdminHeader } from "@/components/admin/table";
 import { requireAdminPage } from "@/lib/admin/guard";
+import { DriveTest } from "@/components/admin/drive-test";
 import { driveConfigStatus } from "@/lib/google-drive/client";
 
 export const metadata = { title: "Settings & integrations" };
@@ -13,7 +14,9 @@ export default async function Settings() {
   const rows: { name: string; ok: boolean; detail: string }[] = [
     { name: "Supabase (URL + publishable key)", ok: env("NEXT_PUBLIC_SUPABASE_URL") && (env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") || env("NEXT_PUBLIC_SUPABASE_ANON_KEY")), detail: "Required for the whole app." },
     { name: "Site URL", ok: env("NEXT_PUBLIC_SITE_URL"), detail: "Used for canonical URLs and auth redirects." },
-    { name: "Google Drive streaming", ok: drive.mode !== "none", detail: drive.mode === "service_account" ? "Service account configured — private Drive files are streamed through /api/video." : drive.mode === "api_key" ? "API key only — works for files shared as 'anyone with the link'. Use a service account for private files." : "Not configured. Drive lessons fall back to the Drive preview player and the importer can't scan folders." },
+    { name: "Google Drive service account", ok: drive.mode === "service_account", detail: drive.mode === "service_account" ? "Configured" : drive.mode === "api_key" ? "Missing — only an API key is set (public files only)." : "Missing" },
+    { name: "Google Drive", ok: drive.mode !== "none", detail: drive.mode === "none" ? "Not configured" : "Credentials present. Use “Test Drive connection” below to confirm Google accepts them." },
+    { name: "Private video streaming", ok: drive.mode !== "none", detail: drive.mode === "service_account" ? "Service account configured — private Drive files are streamed through /api/video." : drive.mode === "api_key" ? "API key only — works for files shared as 'anyone with the link'. Use a service account for private files." : "Not configured. Drive lessons fall back to the Drive preview player and the importer can't scan folders." },
     { name: "Supabase service role key", ok: env("SUPABASE_SERVICE_ROLE_KEY"), detail: "Required for payments: the server creates orders and grants access after verifying the gateway. Manage the gateway itself in Admin → Payments." },
   ];
   return (
@@ -27,6 +30,7 @@ export default async function Settings() {
           </li>
         ))}
       </ul>
+      <div className="mt-6"><DriveTest configured={drive.mode !== "none"} /></div>
       <p className="mt-4 text-xs text-muted-foreground">Set environment variables in Vercel → Project → Settings → Environment Variables, then redeploy. See docs/GOOGLE_DRIVE_SETUP.md.</p>
     </div>
   );

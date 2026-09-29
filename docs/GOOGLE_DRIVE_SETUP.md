@@ -24,8 +24,8 @@ GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END P
 The app builds and runs without these; Drive lessons then fall back to Google's preview player and the importer shows *BLOCKED*. **Admin → Settings** shows which mode is active.
 
 ## 4. Verify
-1. Admin → Settings → "Google Drive streaming: Service account configured".
-2. Admin → Import from Drive → scan a shared folder.
+1. Admin → Settings → "Google Drive service account: Configured", then press **Test connection** (one small metadata request, no video downloaded; you may paste a folder URL/ID to confirm it is shared with the service account — otherwise you get "Source inaccessible").
+2. Admin → Import from Drive → paste a folder URL or ID → **Scan folder** → review the mapping → **Import as draft**. Nothing is published automatically; re-importing never duplicates (Drive file ID is the identity) and never deletes or overwrites.
 3. Open a Drive lesson as an enrolled learner: the native player loads `/api/video/<lessonId>`; seeking issues `206 Partial Content` requests.
 4. Log out and open a non-preview lesson URL: `/api/video/...` returns **403**.
 

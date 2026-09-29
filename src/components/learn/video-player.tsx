@@ -152,6 +152,7 @@ export function VideoPlayer({
             src={source.src}
             controls
             playsInline
+            controlsList="nodownload"
             preload="metadata"
             className="h-full w-full object-contain"
             onLoadedMetadata={(e) => {

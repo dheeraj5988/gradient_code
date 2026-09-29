@@ -27,13 +27,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ les
   const row = (Array.isArray(data) ? data[0] : null) as { video_provider?: string | null; drive_file_id?: string | null; drive_mime_type?: string | null } | null;
   if (error || !row) return deny(403, "You don't have access to this lesson.");
   if (!row.drive_file_id) return deny(404, "This lesson has no Drive video.");
-  if (!isDriveConfigured()) return deny(503, "Video streaming is not configured on the server.");
+  if (!isDriveConfigured()) return deny(503, "Video playback is temporarily unavailable.");
 
   try {
     const r = await streamDriveFile(row.drive_file_id, request.headers.get("range"), { mimeType: row.drive_mime_type });
     return new Response(r.body, { status: r.status, headers: r.headers });
   } catch (err) {
     console.error("[api/video] stream failed for lesson", lessonId, err instanceof Error ? err.message : err);
-    return deny(502, "Couldn't load the video. Please try again.");
+    return deny(502, "Video playback is temporarily unavailable.");
   }
 }
