@@ -7,6 +7,9 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ButtonLink } from "@/components/ui/button";
 import { stipendText } from "@/components/internship/internship-card";
 import { getInternship } from "@/lib/data/queries";
+import { getUser } from "@/lib/supabase/server";
+import { IS_DEMO } from "@/lib/supabase/env";
+import { getInternshipEligibility } from "@/lib/data/applications";
 
 type Params = Promise<{ slug: string }>;
 
@@ -19,6 +22,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function InternshipDetail({ params }: { params: Params }) {
   const i = await getInternship((await params).slug);
   if (!i) notFound();
+  const user = IS_DEMO ? null : await getUser();
+  const elig = user ? await getInternshipEligibility(i.id) : null;
+  const closed = i.apply_by ? new Date(i.apply_by + "T23:59:59") < new Date() : false;
   const facts = [
     { icon: MapPin, label: "Location", value: `${i.location}` },
     { icon: Calendar, label: "Duration", value: `${i.duration_weeks} weeks` },
@@ -64,8 +70,12 @@ export default async function InternshipDetail({ params }: { params: Params }) {
               <p className="text-sm text-muted-foreground">Open to all Gradient Code learners.</p>
             )}
             {i.apply_by ? <p className="text-sm">Apply by <strong>{new Date(i.apply_by).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</strong></p> : null}
-            {/* TODO(antigravity, Phase 7): eligibility check + application form (resume upload) */}
-            <ButtonLink href={`/dashboard/applications?apply=${i.slug}`} size="lg" className="w-full">Apply now</ButtonLink>
+            {IS_DEMO ? <p className="text-sm text-muted-foreground">Applications open once the site is connected to its database.</p>
+              : !user ? <ButtonLink href={`/login?next=/dashboard/applications?apply=${i.slug}`} size="lg" className="w-full">Sign in to apply</ButtonLink>
+              : elig?.applied ? <ButtonLink href="/dashboard/applications" variant="outline" size="lg" className="w-full">Applied — track status</ButtonLink>
+              : closed || elig?.open === false ? <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">Applications are closed.</p>
+              : elig && elig.course_met === false ? <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted-foreground">You&apos;ll be able to apply once you&apos;ve earned the required certificate.</p>
+              : <ButtonLink href={`/dashboard/applications?apply=${i.slug}`} size="lg" className="w-full">Apply now</ButtonLink>}
           </div>
         </aside>
       </div>

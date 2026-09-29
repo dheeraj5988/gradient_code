@@ -53,14 +53,6 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
                 </div>
               </div>
             </section>
-            <section className="rounded-xl border border-border bg-card p-5">
-              <Label htmlFor="coupon">Have a coupon?</Label>
-              <div className="flex gap-2">
-                <input id="coupon" name="coupon" placeholder="Enter code" className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm uppercase focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                <Button variant="outline" type="button" disabled>Apply</Button>
-              </div>
-              {/* TODO(antigravity, Phase 8): validate coupon server-side against `coupons` */}
-            </section>
           </div>
           <aside>
             <div className="space-y-4 rounded-xl border border-border bg-card p-5 lg:sticky lg:top-6">

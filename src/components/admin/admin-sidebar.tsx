@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, BookOpen, ClipboardList, CloudDownload, CreditCard, FileText, GraduationCap, HelpCircle, History, LayoutDashboard, Scale, Settings, Share2, Star, Tags, UserRound, Users } from "lucide-react";
+import { Award, BookOpen, Briefcase, ClipboardList, CloudDownload, CreditCard, FileText, GraduationCap, HelpCircle, History, LayoutDashboard, Scale, Settings, Share2, Star, Tags, UserRound, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Item = { href: string; label: string; icon: typeof BookOpen; later?: boolean };
@@ -30,7 +30,7 @@ const GROUPS: { title?: string; items: Item[] }[] = [
   ] },
   { title: "Career & credentials", items: [
     { href: "/admin/certificates", label: "Certificates", icon: Award },
-    { href: "#", label: "Internships", icon: GraduationCap, later: true },
+    { href: "/admin/internships", label: "Internships", icon: Briefcase },
   ] },
   { title: "Engagement", items: [{ href: "/admin/reviews", label: "Reviews", icon: Star }] },
   { title: "System", items: [

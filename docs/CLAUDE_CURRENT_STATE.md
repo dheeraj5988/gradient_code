@@ -45,7 +45,7 @@ Service-account JWT auth (`lib/google-drive/client.ts`), folder listing, Range-f
 Implemented: dashboard (real counts), course CRUD + publish validation + duplicate + archive + demo flag, curriculum builder (modules/lessons, move up/down, publish/preview toggles, safe delete), lesson editor (Drive/YouTube/Vimeo/file), Drive importer, topics, question bank (answer keys, duplicate, publish/archive), resources (URL / private Drive / Storage), students (+detail with progress), enrollments (manual grants with reason + revoke), instructors, review moderation, read-only orders & certificates, audit log, integration status. Not built: programs, quizzes, projects, payments, coupons, internships admin, notifications, analytics.
 
 ## 13–16. Certificates / internships / referrals / payments
-Certificates: see section 23. Internships: public listing/detail, applications table; no application form or admin pipeline. Referrals + Payments: see the Payments & referrals section below.
+Certificates: see section 23. Internships: see section 24. Referrals + Payments: see the Payments & referrals section below.
 
 ## 17. TODOs
 `grep -rn "TODO(antigravity" src` — player notes/resources polish, internships filters/apply, certificate list/verify, profile editor, password reset, coupon validation, Razorpay, legal page copy.
@@ -82,3 +82,9 @@ Certificate eligibility + issuance → internship applications + admin pipeline 
 - Public `/verify` → `/verify/[id]` uses `verify_certificate()` (returns name, course, date, validity only). Printable `/certificate/[id]` (browser print → PDF, A4 landscape; no server PDF library).
 - Admin: `/admin/certificates` (search, revoke with reason, reinstate) and `/admin/certificates/policies`. A refunded order revokes the learner's certificate for that course.
 - Not built: quizzes/assessments/projects as requirements (only lessons + practice today), QR codes, emailing certificates.
+
+## 24. Internships (added 2026-09-30)
+- Learners apply only through `apply_internship()` (direct inserts/updates on `internship_applications` are revoked). Eligibility is in the database: published, before `apply_by`, and — when a required course is set — a **valid (non-revoked) certificate** for it. Resume is a required **https link** (no file upload/storage yet); portfolio and cover note optional.
+- Timeline in `internship_application_events` (visible notes for the applicant; `internal` notes admin-only via RLS). Applicants can withdraw while applied/shortlisted/interview.
+- Admin: `/admin/internships` (CRUD, publish), `/admin/internships/applications` (pipeline: applied → shortlisted → interview → offered/rejected, with notes). Learner: `/dashboard/applications` (apply + tracker), internship detail shows the right state, `/learn/[slug]/internship` shows real eligibility.
+- Not built: email/in-app notifications, resume file upload, screening questions, interview scheduling.

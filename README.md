@@ -22,6 +22,7 @@ npm run dev                  # http://localhost:3000
 5. `supabase/migrations/20260930090000_payments_referrals.sql` — payments (Paypur), orders lockdown, referrals, payouts
 6. `supabase/migrations/20260930100000_legal_pages.sql` — editable legal pages + business details
 7. `supabase/migrations/20260930110000_certificates.sql` — certificate policies, eligibility, issuance, verification, revocation
+8. `supabase/migrations/20260930120000_internships.sql` — internship apply/withdraw, eligibility, pipeline, timeline
 
 Then make yourself admin (see `docs/ADMIN_GUIDE.md`).
 
