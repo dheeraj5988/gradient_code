@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Database } from "lucide-react";
@@ -24,7 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="border-b border-border bg-background lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-r lg:border-b-0">
         <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-4">
           <Logo href="/admin" />
-          <Badge>Admin</Badge>
+          <span className="flex items-center gap-1"><Badge className="lg:hidden">Admin</Badge><ThemeToggle /></span>
         </div>
         <details className="group lg:hidden">
           <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Menu</summary>
@@ -32,7 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </details>
         <div className="hidden lg:block"><AdminSidebar /></div>
         <div className="hidden space-y-1 border-t border-border px-5 py-4 text-xs text-muted-foreground lg:block">
-          <p className="truncate" title={admin.email}>Signed in as {admin.email}</p>
+          <p className="flex items-center gap-2"><Badge>Admin</Badge><span className="truncate" title={admin.email}>{admin.email}</span></p>
           <p className="flex gap-3"><Link href="/" className="hover:text-foreground hover:underline">View site</Link><Link href="/dashboard" className="hover:text-foreground hover:underline">My learning</Link></p>
         </div>
       </aside>

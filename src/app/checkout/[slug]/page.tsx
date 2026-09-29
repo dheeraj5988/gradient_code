@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -31,7 +32,7 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
       <header className="border-b border-border bg-background">
         <div className="container-page flex h-16 items-center justify-between">
           <Logo />
-          <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Lock className="h-3.5 w-3.5" aria-hidden />Secure checkout</span>
+          <div className="flex items-center gap-3"><ThemeToggle /><span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Lock className="h-3.5 w-3.5" aria-hidden />Secure checkout</span></div>
         </div>
       </header>
       <main id="main" className="container-page py-8 sm:py-10">

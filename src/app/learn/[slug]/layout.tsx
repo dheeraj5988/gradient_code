@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -45,6 +46,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
           ) : (
             <ButtonLink href={`/courses/${slug}`} size="sm">Enroll</ButtonLink>
           )}
+          <ThemeToggle />
           <Link href="/dashboard" aria-label="Back to dashboard" className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"><X className="h-4 w-4" /></Link>
         </div>
       </header>

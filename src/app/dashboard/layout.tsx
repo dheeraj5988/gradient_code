@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Metadata } from "next";
 import { LogOut } from "lucide-react";
 import { Logo } from "@/components/brand";
@@ -15,9 +16,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <aside className="border-b border-border bg-background lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0">
         <div className="flex h-16 items-center justify-between px-5">
           <Logo />
-          <form action="/auth/signout" method="post" className="lg:hidden">
-            <button className="text-xs font-medium text-muted-foreground hover:text-foreground">Sign out</button>
-          </form>
+          <div className="flex items-center gap-2 lg:hidden">
+            <ThemeToggle />
+            <form action="/auth/signout" method="post">
+              <button className="text-xs font-medium text-muted-foreground hover:text-foreground">Sign out</button>
+            </form>
+          </div>
         </div>
         <SidebarNav />
         <div className="mt-auto hidden border-t border-border p-4 lg:block">
@@ -27,6 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <p className="truncate text-sm font-medium">{name}</p>
               <p className="text-xs text-muted-foreground">Learner</p>
             </div>
+            <ThemeToggle className="h-8 w-8" />
             <form action="/auth/signout" method="post">
               <button aria-label="Sign out" className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-surface-2 hover:text-foreground"><LogOut className="h-4 w-4" /></button>
             </form>

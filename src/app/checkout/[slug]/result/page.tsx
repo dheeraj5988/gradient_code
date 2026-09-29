@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
@@ -39,7 +40,7 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="border-b border-border bg-background"><div className="container-page flex h-16 items-center"><Logo /></div></header>
+      <header className="border-b border-border bg-background"><div className="container-page flex h-16 items-center justify-between"><Logo /><ThemeToggle /></div></header>
       <main id="main" className="container-page py-12">
         <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-sm">
           <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${tone}`}><Icon className="h-6 w-6" aria-hidden /></span>

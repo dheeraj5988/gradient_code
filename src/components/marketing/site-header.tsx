@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Logo } from "@/components/brand";
@@ -34,6 +35,7 @@ export async function SiteHeader() {
           />
         </form>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <ThemeToggle />
           {user ? (
             <ButtonLink href="/dashboard" size="sm">My learning</ButtonLink>
           ) : (

@@ -6,6 +6,8 @@
  * Never hardcode colours in components; use these tokens.
  */
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   /* Colour */
   --color-background: var(--background);
@@ -77,7 +79,48 @@
   --rating: #b45309;
 }
 
+/*
+ * Dark theme — same semantic tokens, dark values. Applied by the `dark` class on <html>
+ * (set before first paint by the inline script in layout.tsx). Screen only: printed pages
+ * (certificates) always use the light tokens.
+ */
+@media screen {
+  html.dark {
+    --background: #0b1120;
+    --foreground: #f8fafc;
+    --surface: #111827;
+    --surface-2: #1e293b;
+    --card: #172033;
+    --muted-foreground: #cbd5e1;
+    --subtle-foreground: #94a3b8;
+    --border: #263244;
+    --border-strong: #3b4a61;
+    --ring: #60a5fa;
+
+    --primary: #60a5fa;
+    --primary-hover: #93c5fd;
+    --primary-soft: #15243d;
+    --primary-foreground: #0b1120;
+
+    --success: #4ade80;
+    --success-soft: #0f2a1c;
+    --warning: #fbbf24;
+    --warning-soft: #2b2410;
+    --danger: #f87171;
+    --danger-soft: #331618;
+    --rating: #fbbf24;
+
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.35);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+    --shadow-card: 0 4px 12px -2px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.6);
+  }
+}
+
 @layer base {
+  html.dark {
+    color-scheme: dark;
+  }
   * {
     border-color: var(--color-border);
   }

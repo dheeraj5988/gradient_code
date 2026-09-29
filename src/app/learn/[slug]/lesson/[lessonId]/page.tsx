@@ -61,7 +61,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="pb-24 lg:pb-8">
-      <div className="bg-foreground">
+      <div className="bg-black">
         <div className="mx-auto aspect-video max-h-[68vh] w-full max-w-6xl">
           {content === null ? (
             <div className="grid h-full place-items-center p-6 text-center text-white">

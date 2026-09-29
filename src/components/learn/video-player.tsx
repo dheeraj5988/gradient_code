@@ -123,7 +123,7 @@ export function VideoPlayer({
                     videoRef.current.play().catch(() => {});
                   }
                 }}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-xs font-semibold text-foreground hover:bg-white/90 transition shadow-sm"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-xs font-semibold text-black hover:bg-white/90 transition shadow-sm"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Try again
@@ -198,7 +198,7 @@ export function VideoPlayer({
       {resumed && (source.kind === "file" || isYouTube) ? (
         <button
           onClick={() => setResumed(false)}
-          className="absolute top-3 left-3 z-10 rounded-md bg-foreground/80 px-2.5 py-1 text-xs font-medium text-white backdrop-blur shadow-sm hover:bg-foreground transition"
+          className="absolute top-3 left-3 z-10 rounded-md bg-foreground/80 px-2.5 py-1 text-xs font-medium text-background backdrop-blur shadow-sm hover:bg-foreground transition"
         >
           Resumed at {fmt(initialPosition)} ✕
         </button>

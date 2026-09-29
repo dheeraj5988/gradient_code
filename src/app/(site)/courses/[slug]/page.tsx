@@ -131,7 +131,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
               <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} priority />
               {preview ? (
                 <Link href={`/learn/${course.slug}/lesson/${preview.id}`} className="group absolute inset-0 grid place-items-center">
-                  <span className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 rounded-lg bg-foreground/85 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors group-hover:bg-foreground"><PlayCircle className="h-4 w-4" aria-hidden />Preview this course</span>
+                  <span className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 rounded-lg bg-foreground/85 px-3.5 py-2 text-sm font-semibold text-background shadow-sm transition-colors group-hover:bg-foreground"><PlayCircle className="h-4 w-4" aria-hidden />Preview this course</span>
                 </Link>
               ) : null}
             </div>
