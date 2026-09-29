@@ -48,3 +48,14 @@ The full migration chain was applied to a local PostgreSQL 16 with Supabase-styl
 
 ### Phase 3 attack tests (student JWT against the REST API) — all denied
 create/edit/publish course · create module · edit lesson video · create question · read/write answer keys · `practice_review` before attempting · issue certificate · self-enroll in paid course (direct + RPC) · extend own enrollment · read another learner's notes/attempts · forge an attempt · read paid lesson (not enrolled) · anon read lessons · read/write audit log · moderate reviews · grant self admin · change application status · create resource · see unpublished lessons in outline. Admin writes and legitimate learner reads succeed (31/31).
+
+## Phase 4 additions (payments & referrals)
+| # | Finding | Fix |
+|---|---|---|
+| P1 | Policy `"orders insert"` let any user insert an order (including `status='paid'`) | Policy dropped; INSERT/UPDATE/DELETE revoked from anon/authenticated. Only the server (service role) creates and finalizes orders |
+| P2 | Payment success could be faked via the browser redirect | Callback HMAC-SHA256 (timing-safe) **and** server-to-server status check; amount compared with the DB order; `finalize_paid_order()` is service-role only and idempotent |
+| P3 | Gateway secrets | Stored AES-256-GCM in `payment_settings` (no client policies, no grants); write-only in the admin UI; never logged or audited |
+| P4 | Client-supplied price | Ignored. Price comes from `courses.price`; test mode is a server setting |
+| P5 | Referral abuse | Self-referral constraint; commission only from verified payments; hold period; refund cancels unpaid commission; ledger is append-only via functions; payouts admin-processed with a reference |
+
+Tested with a mock gateway: forged signature, hand-made success URL, replayed callback, underpaid amount, failed payment, refund, payout flow, and direct DB attacks by a student (all denied).

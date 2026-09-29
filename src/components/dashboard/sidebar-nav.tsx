@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, BookOpen, Briefcase, Compass, LayoutDashboard, UserRound } from "lucide-react";
+import { Award, BookOpen, Briefcase, Compass, LayoutDashboard, Share2, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -9,6 +9,7 @@ const NAV = [
   { href: "/dashboard/courses", label: "My courses", icon: BookOpen },
   { href: "/dashboard/certificates", label: "Certificates", icon: Award },
   { href: "/dashboard/applications", label: "Applications", icon: Briefcase },
+  { href: "/dashboard/referrals", label: "Refer & earn", icon: Share2 },
   { href: "/dashboard/profile", label: "Profile", icon: UserRound },
   { href: "/courses", label: "Explore courses", icon: Compass },
 ];

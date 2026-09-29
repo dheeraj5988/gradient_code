@@ -3,13 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Award, Infinity as InfinityIcon, Lock, RefreshCw, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/brand";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { Label } from "@/components/ui/input";
+import { Input, Label } from "@/components/ui/input";
 import { CourseThumb } from "@/components/course-thumb";
 import { getCourseBySlug } from "@/lib/data/queries";
+import { getUser } from "@/lib/supabase/server";
+import { IS_DEMO } from "@/lib/supabase/env";
+import { chargeAmount, loadPaymentConfig } from "@/lib/payments/config";
 import { discountPercent, formatPrice } from "@/lib/utils";
-import { enrollFree } from "./actions";
+import { enrollFree, startPayment } from "./actions";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
@@ -18,6 +21,11 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
   const { error } = await searchParams;
   if (!course) notFound();
   const off = discountPercent(course.price, course.mrp);
+  const cfg = IS_DEMO ? null : await loadPaymentConfig();
+  const canPay = !!cfg && cfg.enabled && cfg.hasCredentials;
+  const charge = cfg ? chargeAmount(cfg, course.price) : course.price;
+  const testing = !!cfg && cfg.testMode && course.price > 0;
+  const user = IS_DEMO ? null : await getUser();
   return (
     <div className="min-h-screen bg-surface">
       <header className="border-b border-border bg-background">
@@ -60,16 +68,28 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
               <dl className="space-y-2.5 text-sm">
                 {off ? <div className="flex justify-between text-muted-foreground"><dt>Original price</dt><dd className="tabular-nums line-through">{formatPrice(course.mrp!)}</dd></div> : null}
                 {off ? <div className="flex justify-between text-success"><dt>Discount ({off}%)</dt><dd className="tabular-nums">−{formatPrice(course.mrp! - course.price)}</dd></div> : null}
-                <div className="flex justify-between border-t border-border pt-3 text-base font-bold"><dt>Total</dt><dd className="tabular-nums">{formatPrice(course.price)}</dd></div>
+                <div className="flex justify-between border-t border-border pt-3 text-base font-bold"><dt>Total</dt><dd className="tabular-nums">{formatPrice(charge)}</dd></div>
+                {testing ? <p className="text-xs text-muted-foreground">Test pricing is on: listed price {formatPrice(course.price)}, charged {formatPrice(charge)}.</p> : null}
               </dl>
-              {/* TODO(antigravity, Phase 8): Razorpay order → checkout → server verification → enrollment */}
               {error ? <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p> : null}
               {course.price === 0 ? (
                 <form action={enrollFree.bind(null, course.id, course.slug)}><Button size="lg" className="w-full">Enroll for free</Button></form>
+              ) : !canPay ? (
+                <>
+                  <Button size="lg" className="w-full" disabled>Payments unavailable</Button>
+                  <p className="text-center text-xs text-muted-foreground">Online payment isn&apos;t switched on yet. Please check back soon.</p>
+                </>
+              ) : !user ? (
+                <ButtonLink size="lg" className="w-full" href={`/login?next=/checkout/${course.slug}`}>Sign in to pay</ButtonLink>
               ) : (
-                <Button size="lg" className="w-full" disabled>Payments launching soon</Button>
+                <form action={startPayment.bind(null, course.id, course.slug)} className="space-y-3">
+                  <div><Label htmlFor="firstname">Full name</Label><Input id="firstname" name="firstname" autoComplete="name" required minLength={2} maxLength={60} defaultValue="" /></div>
+                  <div><Label htmlFor="phone">Mobile number</Label><Input id="phone" name="phone" type="tel" inputMode="numeric" autoComplete="tel" required pattern="(\+?91)?[6-9][0-9]{9}" placeholder="10-digit UPI-linked number" /></div>
+                  <Button size="lg" className="w-full">Pay {formatPrice(charge)} with UPI</Button>
+                </form>
               )}
-              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" aria-hidden />UPI, cards and netbanking via Razorpay</p>
+              {testing && canPay ? <p className="rounded-lg bg-warning-soft px-3 py-2 text-xs text-warning">Test mode: this purchase is charged {formatPrice(charge)} only.</p> : null}
+              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" aria-hidden />Secure UPI payment via Paypur</p>
               <p className="text-center text-xs text-muted-foreground">By purchasing you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/refund" className="underline">Refund policy</Link>.</p>
             </div>
           </aside>

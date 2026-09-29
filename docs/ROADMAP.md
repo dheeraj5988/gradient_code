@@ -10,7 +10,7 @@
 | 4 | Projects, resources, notes, interview prep | ⏳ |
 | 5 | Assessments + certificate policy/eligibility + issuance + `/verify/[id]` | ⏳ |
 | 6 | Internship policy/eligibility, applications, tracker, learner profile | ⏳ |
-| 7 | Razorpay payments + server-side enrollment | ⏳ |
+| 7 | Paypur UPI payments + server-side enrollment + referrals (payouts, ledger) | ✅ built; awaiting live-gateway verification |
 | 8 | Admin panel | ⏳ |
 | 9 | Analytics, SEO, performance, accessibility audit, final ZIP | ⏳ |
 

@@ -3,14 +3,14 @@
 Audited from `main` at `d91fdf9` and rebased onto `f6fd3af` (Antigravity: fresh-database bootstrap `supabase/master_schema.sql`, manifest, OG image, publishable-key support), then updated with Phase 3. Facts only; anything not built is listed as missing.
 
 ## 1. Architecture
-Next.js **15.5.26** App Router · React 19 · TypeScript strict · Tailwind v4 (light tokens in `src/app/globals.css`) · Supabase via `@supabase/ssr` (anon key + user session only; **no service-role key is used anywhere yet**) · Vercel. Server Components by default; mutations are Server Actions; reads go through `src/lib/data/*` (learner) and `src/lib/admin/*` (admin). Demo mode (sample data, yellow banner) when Supabase env vars are missing.
+Next.js **15.5.26** App Router · React 19 · TypeScript strict · Tailwind v4 (light tokens in `src/app/globals.css`) · Supabase via `@supabase/ssr` (anon key + user session only; service-role key is used only in `src/lib/supabase/service.ts` (payments)) · Vercel. Server Components by default; mutations are Server Actions; reads go through `src/lib/data/*` (learner) and `src/lib/admin/*` (admin). Demo mode (sample data, yellow banner) when Supabase env vars are missing.
 
 ## 2. Routes
 - **Public:** `/`, `/courses`, `/courses/[slug]`, `/instructors/[slug]`, `/internships`, `/internships/[slug]`, `/pricing`, `/about`, `/verify` (form only), placeholders `/programs /projects /resources /careers /contact /terms /privacy /refund`.
 - **Auth:** `/login`, `/signup`, `/forgot-password` (placeholder), `/auth/callback`, `/auth/signout`.
 - **Learner:** `/dashboard` (+ `/courses /certificates /applications /profile`), `/learn/[slug]` (overview, `lesson/[id]`, `practice`, `practice/[id]`, `practice/saved`, `resources`, `notes`, `interview`, `projects`, `certificate`, `internship`).
 - **Admin (Phase 3):** `/admin`, `/admin/courses` (+`new`, `[id]/edit`, `[id]/curriculum`, `[id]/lessons/[lessonId]`), `/admin/import`, `/admin/topics`, `/admin/questions`, `/admin/resources`, `/admin/students` (+`[id]`), `/admin/enrollments`, `/admin/instructors`, `/admin/reviews`, `/admin/orders`, `/admin/certificates`, `/admin/audit`, `/admin/settings`.
-- **API:** `/api/video/[lessonId]` (authorised Drive stream), `/api/resource/[resourceId]` (authorised Drive file), `/api/razorpay/order` (501 stub).
+- **API:** `/api/video/[lessonId]` (authorised Drive stream), `/api/resource/[resourceId]` (authorised Drive file), `/api/paypur/callback` (verified payment return), `/r/[code]` (referral link).
 
 ## 3. Major components
 `components/ui/*` (Button, Badge, inputs, Skeleton, EmptyState, ErrorState, ProgressBar/Ring, Breadcrumbs, Tabs, Accordion), course/learn/practice components, admin kit (`components/admin/*`: sidebar, DataTable + Toolbar, AdminForm with validation/unsaved-changes guard, ActionButton, course/lesson/question/resource/topic/instructor/enrollment forms, ImportWizard).
@@ -45,7 +45,7 @@ Service-account JWT auth (`lib/google-drive/client.ts`), folder listing, Range-f
 Implemented: dashboard (real counts), course CRUD + publish validation + duplicate + archive + demo flag, curriculum builder (modules/lessons, move up/down, publish/preview toggles, safe delete), lesson editor (Drive/YouTube/Vimeo/file), Drive importer, topics, question bank (answer keys, duplicate, publish/archive), resources (URL / private Drive / Storage), students (+detail with progress), enrollments (manual grants with reason + revoke), instructors, review moderation, read-only orders & certificates, audit log, integration status. Not built: programs, quizzes, projects, payments, coupons, internships admin, notifications, analytics.
 
 ## 13–16. Certificates / internships / referrals / payments
-Certificates: table + read-only admin list; no eligibility engine or issuance (students can't self-issue). Internships: public listing/detail, applications table; no application form or admin pipeline. Referrals: architecture doc only (`docs/REFERRAL_ARCHITECTURE.md`), no tables. Payments: `orders` table, checkout UI, free-course enrollment RPC; Razorpay not integrated.
+Certificates: table + read-only admin list; no eligibility engine or issuance (students can't self-issue). Internships: public listing/detail, applications table; no application form or admin pipeline. Referrals + Payments: see the Payments & referrals section below.
 
 ## 17. TODOs
 `grep -rn "TODO(antigravity" src` — player notes/resources polish, internships filters/apply, certificate list/verify, profile editor, password reset, coupon validation, Razorpay, legal page copy.
@@ -62,7 +62,14 @@ Certificates: table + read-only admin list; no eligibility engine or issuance (s
 2. Create/confirm an admin user (`user_roles.role = 'admin'`).
 3. Configure Google service-account credentials and share course folders with it (otherwise Drive videos use the preview iframe).
 4. Legal pages (terms, privacy, refund) still have no content.
-5. Razorpay not implemented — paid courses can only be granted manually.
+5. Payments: run migration `20260930090000_payments_referrals.sql`, set `SUPABASE_SERVICE_ROLE_KEY` in Vercel, add the Paypur key/salt in Admin → Payments, then do one real ₹1 test purchase (see `docs/PAYMENTS_SETUP.md`).
 
 ## 20. Recommended next order
-Payments (Razorpay order → verify → webhook → enrollment) → assessments/quizzes → certificate eligibility + issuance → internship applications + admin pipeline → referrals → analytics/SEO polish.
+Certificate eligibility + issuance → internship applications + admin pipeline → legal pages → assessments/quizzes → analytics/SEO polish.
+
+## 21. Payments & referrals (added 2026-09-30)
+- **Gateway:** Paypur (UPI). Checkout → `startPayment` (server action; price from DB, order created with service role) → Paypur `pay_url` → redirect to `/api/paypur/callback` → HMAC verified (timing-safe) → Paypur status API re-check → `finalize_paid_order()` (idempotent, amount-checked) → enrollment (`source='payment'`).
+- **Admin → Payments:** key/salt (write-only, AES-256-GCM at rest), enable switch, **test mode** (charges a fixed ₹1 for every paid course; real prices untouched), referral settings, connection check. **Admin → Orders:** filters, gateway ref, TEST badge, refund bookkeeping (removes access, cancels unpaid commission).
+- **Security:** students can no longer insert/update orders (old "orders insert" policy removed); `finalize_paid_order`/`fail_order` are service-role only; `payment_settings` has no client access.
+- **Referrals:** `/dashboard/referrals` (code, link `/r/CODE`, balances, payout request), `/admin/referrals` (custom codes, payouts). Commission only from verified payments, 14-day hold (configurable), append-only ledger, self-referral blocked.
+- **Unverified against the live gateway:** exact success/failure status strings and the status-API response shape (parser is tolerant; the signed callback is the fallback); Key → `X-PAYPUR-KEY`, Salt → signing secret mapping. Tested against a mock built from the supplied docs only.
