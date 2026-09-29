@@ -21,6 +21,7 @@ npm run dev                  # http://localhost:3000
 4. `supabase/migrations/20260929180000_admin_cms.sql` — admin CMS, course status/demo flag, audit log
 5. `supabase/migrations/20260930090000_payments_referrals.sql` — payments (Paypur), orders lockdown, referrals, payouts
 6. `supabase/migrations/20260930100000_legal_pages.sql` — editable legal pages + business details
+7. `supabase/migrations/20260930110000_certificates.sql` — certificate policies, eligibility, issuance, verification, revocation
 
 Then make yourself admin (see `docs/ADMIN_GUIDE.md`).
 

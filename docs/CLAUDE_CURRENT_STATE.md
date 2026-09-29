@@ -45,7 +45,7 @@ Service-account JWT auth (`lib/google-drive/client.ts`), folder listing, Range-f
 Implemented: dashboard (real counts), course CRUD + publish validation + duplicate + archive + demo flag, curriculum builder (modules/lessons, move up/down, publish/preview toggles, safe delete), lesson editor (Drive/YouTube/Vimeo/file), Drive importer, topics, question bank (answer keys, duplicate, publish/archive), resources (URL / private Drive / Storage), students (+detail with progress), enrollments (manual grants with reason + revoke), instructors, review moderation, read-only orders & certificates, audit log, integration status. Not built: programs, quizzes, projects, payments, coupons, internships admin, notifications, analytics.
 
 ## 13–16. Certificates / internships / referrals / payments
-Certificates: table + read-only admin list; no eligibility engine or issuance (students can't self-issue). Internships: public listing/detail, applications table; no application form or admin pipeline. Referrals + Payments: see the Payments & referrals section below.
+Certificates: see section 23. Internships: public listing/detail, applications table; no application form or admin pipeline. Referrals + Payments: see the Payments & referrals section below.
 
 ## 17. TODOs
 `grep -rn "TODO(antigravity" src` — player notes/resources polish, internships filters/apply, certificate list/verify, profile editor, password reset, coupon validation, Razorpay, legal page copy.
@@ -76,3 +76,9 @@ Certificate eligibility + issuance → internship applications + admin pipeline 
 
 ## 22. Legal pages (added 2026-09-30)
 `site_settings` (business details) + `site_pages` (terms/privacy/refund, Markdown subset, `reviewed` flag) — public read, admin write (RLS). Public routes `/terms /privacy /refund` render them (safe renderer, no raw HTML); `/contact` shows the support details once set. Unset placeholders render as “[to be confirmed]” — nothing is invented. Text is a generic draft, **not legal advice**.
+
+## 23. Certificates (added 2026-09-30)
+- `certificate_policies` per course (off by default; % of required published lessons, % of published practice questions answered correctly, credential code). `certificate_eligibility()` recomputes from DB facts on every call; `issue_certificate()` is the only way a learner gets one (students still cannot insert). Credential IDs `GC-YYYY-CODE-XXXXXXXX` (unambiguous alphabet).
+- Public `/verify` → `/verify/[id]` uses `verify_certificate()` (returns name, course, date, validity only). Printable `/certificate/[id]` (browser print → PDF, A4 landscape; no server PDF library).
+- Admin: `/admin/certificates` (search, revoke with reason, reinstate) and `/admin/certificates/policies`. A refunded order revokes the learner's certificate for that course.
+- Not built: quizzes/assessments/projects as requirements (only lessons + practice today), QR codes, emailing certificates.
