@@ -224,3 +224,11 @@ Once your database is verified:
    Run `npm run dev` to verify the site connects to Supabase and displays the published courses in `/courses`.
 3. **Deploy to Vercel:**
    Push commits to GitHub and deploy to Vercel with your production environment variables.
+
+## After master_schema.sql (verified 2026-09-30)
+Run these in order in the SQL editor — all apply cleanly on top of `master_schema.sql` (47 tables total):
+1. `supabase/migrations/20260929180000_admin_cms.sql`
+2. `supabase/migrations/20260930090000_payments_referrals.sql`
+3. `supabase/migrations/20260930100000_legal_pages.sql`
+4. `supabase/migrations/20260930110000_certificates.sql`
+5. `supabase/migrations/20260930120000_internships.sql`
