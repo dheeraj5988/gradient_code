@@ -1,3 +1,4 @@
+import { emailDeliveryStatus } from "@/lib/email/config";
 import { CheckCircle2, CircleSlash } from "lucide-react";
 import { AdminHeader } from "@/components/admin/table";
 import { requireAdminPage } from "@/lib/admin/guard";
@@ -14,6 +15,7 @@ export default async function Settings() {
     { name: "Supabase (URL + publishable key)", ok: env("NEXT_PUBLIC_SUPABASE_URL") && (env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") || env("NEXT_PUBLIC_SUPABASE_ANON_KEY")), detail: "Required for the whole app." },
     { name: "Site URL", ok: env("NEXT_PUBLIC_SITE_URL"), detail: "Used for canonical URLs and auth redirects." },
     { name: "Google Drive streaming", ok: drive.mode !== "none", detail: drive.mode === "service_account" ? "Service account configured — private Drive files are streamed through /api/video." : drive.mode === "api_key" ? "API key only — works for files shared as 'anyone with the link'. Use a service account for private files." : "Not configured. Drive lessons fall back to the Drive preview player and the importer can't scan folders." },
+    { name: "Email delivery (verification & password-reset codes)", ...emailDeliveryStatus() },
     { name: "Supabase service role key", ok: env("SUPABASE_SERVICE_ROLE_KEY"), detail: "Required for payments: the server creates orders and grants access after verifying the gateway. Manage the gateway itself in Admin → Payments." },
   ];
   return (

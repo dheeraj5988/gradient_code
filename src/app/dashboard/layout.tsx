@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { LogOut } from "lucide-react";
+import { redirect } from "next/navigation";
+import { BadgeCheck, LogOut } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { getUser } from "@/lib/supabase/server";
@@ -8,6 +9,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
+  if (user && !user.email_confirmed_at) redirect("/verify-email?reason=required&next=/dashboard"); // defence in depth; middleware does this first
   const name = (user?.user_metadata?.full_name as string) || user?.email || "Demo learner";
   const initials = name.split(/[\s@]/).map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
   return (
@@ -24,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">{initials}</span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{name}</p>
+              <p className="flex items-center gap-1 text-sm font-medium"><span className="truncate">{name}</span>{user?.email_confirmed_at ? <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-success" aria-label="Email verified" /> : null}</p>
               <p className="text-xs text-muted-foreground">Learner</p>
             </div>
             <form action="/auth/signout" method="post">

@@ -5,39 +5,55 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { safeNext } from "@/lib/auth/safe-next";
+import { VERIFY_CD_KEY, markCodeSent, setPendingEmail } from "@/lib/auth/pending";
 import { IS_DEMO } from "@/lib/supabase/env";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
-  const next = useSearchParams().get("next") ?? "/dashboard";
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"));
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ tone: "error" | "ok"; text: string } | null>(params.get("error") === "oauth" ? { tone: "error", text: "Google sign-in didn't complete. Please try again." } : null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (IS_DEMO) return router.push(next);
     const f = new FormData(e.currentTarget);
-    const email = String(f.get("email"));
-    const password = String(f.get("password"));
+    const email = String(f.get("email") ?? "").trim().toLowerCase();
+    const password = String(f.get("password") ?? "");
+    const name = String(f.get("name") ?? "").trim().replace(/\s+/g, " ");
+    if (mode === "signup" && name.length < 2) return setMsg({ tone: "error", text: "Enter your full name." });
     setLoading(true);
     setMsg(null);
     const supabase = createClient();
-    const { error } =
-      mode === "login"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: { full_name: String(f.get("name") ?? "") },
-              emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-            },
-          });
+    const toVerify = (sendCode: boolean) => {
+      setPendingEmail(email);
+      if (!sendCode) markCodeSent(VERIFY_CD_KEY);
+      router.push(`/verify-email?next=${encodeURIComponent(next)}${sendCode ? "&send=1" : ""}`);
+    };
+
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setLoading(false);
+        // Account exists but the email was never verified → continue on the verification screen.
+        if (error.code === "email_not_confirmed" || /not confirmed/i.test(error.message)) return toVerify(true);
+        return setMsg({ tone: "error", text: /invalid login/i.test(error.message) ? "Incorrect email or password." : error.message });
+      }
+      router.push(next);
+      router.refresh();
+      return;
+    }
+
+    // Signup: Supabase emails a 6-digit code (Email template uses {{ .Token }}) — no link is involved.
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
     setLoading(false);
     if (error) return setMsg({ tone: "error", text: error.message });
-    if (mode === "signup") return setMsg({ tone: "ok", text: "Check your email to confirm your account." });
-    router.push(next);
-    router.refresh();
+    // Supabase returns a user with no identities (and no email) when the address already has a confirmed account.
+    if (data.user && data.user.identities?.length === 0) return setMsg({ tone: "error", text: "An account with this email already exists. Log in, or reset your password." });
+    if (data.session) { router.push(next); router.refresh(); return; } // project has "Confirm email" switched off
+    toVerify(false);
   }
 
   async function google() {
