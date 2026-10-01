@@ -20,7 +20,7 @@
 | **Admin CMS** | **READY** | Phase 3 Admin CMS active: Dashboard with live metrics, Course CRUD & completeness validation, Curriculum reordering, Question bank, Topics, Resources, Students, and Audit Log. |
 | **Learning Portal** | **READY** | DB-driven outline, lesson streaming player, progress tracking, practice questions, saved questions, and notes working end-to-end. |
 | **Google Drive Integration** | **BLOCKED** | Authorized proxy (`/api/video/[lessonId]`) and importer built and secured. Live streaming is blocked on production Google Service Account credentials (`GOOGLE_SERVICE_ACCOUNT_EMAIL` & `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`). Falls back to Google preview iframe. |
-| **Legal Pages** | **BLOCKED** | `/terms`, `/privacy`, and `/refund` are placeholders. Definite blocker before enabling payments. |
+| **Legal Pages** | **DRAFT** | Editable drafts in Admin → Legal pages; owner must fill business details and mark reviewed. |
 | **Application Security** | **READY** | 0 open video proxies. Database access strictly controlled via SECURITY DEFINER RPCs (`lesson_content`, `can_access_course`) and server-side role check (`requireAdminPage()`). |
 | **Production Build** | **READY** | `npm run typecheck` and `npm run build` pass with 0 errors across 31 static and dynamic routes. |
 
@@ -79,7 +79,7 @@
 
 ## 3. Production Blockers Before Commercial Launch
 
-1. **Legal Documentation (BLOCKED):** Terms of Service, Privacy Policy, and Refund Policy must have verified copy before processing customer transactions.
-2. **Payment Processing (NOT STARTED):** Razorpay payment gateway integration (`/api/razorpay/order`, webhook handling, and verified payment enrollment) is scheduled for Phase 4.
+1. **Legal Documentation (DRAFT):** `/terms`, `/privacy`, `/refund` render editable drafts from Admin → Legal pages; owner must fill business details and mark them reviewed.
+2. **Payment Processing (BUILT, awaiting live test):** Paypur UPI checkout, signed callback `/api/paypur/callback`, server status check and `finalize_paid_order()`. Do one ₹1 test purchase — see `docs/PAYMENTS_SETUP.md`.
 3. **Google Drive Service Account (BLOCKED):** Video streaming currently uses fallback iframe; service account keys are required for direct Range streaming.
 4. **Google OAuth Activation (PARTIAL):** OAuth client credentials must be saved in Supabase dashboard.

@@ -14,7 +14,7 @@ Platforms studied: Coursera, Udemy, edX, Great Learning, Simplilearn, upGrad, Sc
 | Dashboard | Resume hero, progress cards, stats, certificates | Coursera | ✅ core |
 | Certificates | Public verification URL + LinkedIn “Add to profile” | Coursera, Great Learning | ⏳ Phase 4 |
 | Reviews | Stars + histogram, only enrolled learners can review | Udemy | ✅ DB + display; form pending |
-| Checkout | Order summary, coupon, UPI/cards (Razorpay in India), refund note | Udemy, Scaler | ⏳ Phase 3 |
+| Checkout | Order summary, coupon, UPI via Paypur, refund note | Udemy, Scaler | ✅ Phase 7 |
 | Internships | Listing cards (stipend, duration, mode, skills), filters, apply with resume, status tracking | Internshala | ✅ listing + detail; apply pending |
 | Career tracks | Bundle courses into a “program” with a higher price + mentorship | Great Learning, upGrad | ⏳ Phase 6 |
 | SEO | `schema.org/Course` JSON-LD, server-rendered pages, clean slugs | all | ✅ on course page |

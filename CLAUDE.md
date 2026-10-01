@@ -4,8 +4,6 @@ Gradient Code is an Indian EdTech platform. It sells video courses (Hinglish, ho
 
 **Stack (do not change without asking):** Next.js 15 App Router · React 19 · TypeScript strict · Tailwind CSS v4 · Supabase (`@supabase/ssr`) · Paypur (UPI) payments · Vercel · lucide-react · `@fontsource-variable/inter` + `jetbrains-mono`. No UI library: use `src/components/ui/*`.
 
-`AGENTS.md` still says "Razorpay". That is stale: the live gateway is **Paypur** (`src/lib/payments/`, `/api/paypur/callback`).
-
 ## Code rules
 1. Server Components by default. Use `"use client"` only for interactivity.
 2. All learner DB reads go through `src/lib/data/*` (entry point `src/lib/data/queries.ts`, server-only). Admin reads go through `src/lib/admin/*`. Mutations are Server Actions or route handlers.

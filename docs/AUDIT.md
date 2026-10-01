@@ -1,5 +1,7 @@
 # Repository audit — after Phase 1 (2026-09-28)
 
+> Historical snapshot. For the current state read `docs/CLAUDE_CURRENT_STATE.md`. Payments use **Paypur (UPI)**; Razorpay was never integrated and has been removed.
+
 > Phase 2 update: security holes fixed and portal/practice built — see `docs/SECURITY.md` and `docs/ROADMAP.md`.
 
 ## 1. Architecture
@@ -15,7 +17,7 @@
 | Placeholder ("Coming soon", noindex) | `/programs`, `/projects`, `/resources`, `/careers`, `/contact`, `/terms`, `/privacy`, `/refund` |
 | Auth | `/login`, `/signup`, `/forgot-password` (placeholder), `/auth/callback`, `/auth/signout` |
 | Learner | `/dashboard`, `/dashboard/courses`, `/dashboard/certificates`, `/dashboard/applications`, `/dashboard/profile`, `/learn/[slug]` |
-| Commerce / admin | `/checkout/[slug]` (UI only), `/api/razorpay/order` (501 stub), `/admin` (role-gated placeholder) |
+| Commerce / admin | `/checkout/[slug]` (UI only at the time; now Paypur — see CLAUDE_CURRENT_STATE §21), `/admin` (role-gated placeholder) |
 
 ## 3. Database (Supabase)
 **Existing (Lovable era):** profiles, user_roles (+ `has_role()`), employee_permissions, courses, course_modules, lessons, enrollments, lesson_progress, certificates, forum_questions, forum_answers, assignments, assignment_submissions, ebooks, bootcamps, messages, orders, job_openings, contact_submissions, activity_log, lesson_notes.
@@ -27,7 +29,7 @@
 Domain: CourseCard, CourseThumb, Curriculum, SortSelect, InternshipCard, Rating, SiteHeader/MobileNav/SiteFooter, dashboard SidebarNav, learn CourseNavDrawer, ComingSoon.
 
 ## 5. Open TODOs (`grep -rn "TODO(antigravity" src`)
-Free-preview video fetch for non-enrolled users · notes/resources/Q&A tabs · review author names · certificate list + `/verify/[id]` · application form + tracker · learner profile editor · password reset · coupon validation · Razorpay order/verify/webhook · admin panel · internship filters · plans in DB · legal page text.
+Free-preview video fetch for non-enrolled users · notes/resources/Q&A tabs · review author names · certificate list + `/verify/[id]` · application form + tracker · learner profile editor · password reset · coupon validation · payments (done: Paypur) · admin panel · internship filters · plans in DB · legal page text.
 
 ## 6. Product-spec gaps
 Learning portal sections (practice, quizzes, projects, resources, notes, interview), practice engine, progress engine beyond lessons, assessments, certificate & internship eligibility engines, programs, projects marketplace, notifications, global grouped search, real admin, analytics.

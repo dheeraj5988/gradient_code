@@ -4,9 +4,20 @@
 
 Gradient Code offers verified certificates upon successful course completion. This document specifies the comprehensive future architecture for eligibility evaluation, automated issuance, cryptographic verification, and credential lifecycle management.
 
-### Current Implementation State (Phase 2)
+### Current Implementation State (2026-10-01)
 | Component | Status | Location / Implementation Details |
 |---|---|---|
+| **Policies** | ✅ | `certificate_policies` per course (off by default; % required lessons, % practice correct, credential code) |
+| **Eligibility** | ✅ | `certificate_eligibility()` recomputes from DB facts on every call |
+| **Issuance** | ✅ | `issue_certificate()` RPC only; students cannot insert. IDs `GC-YYYY-CODE-XXXXXXXX` |
+| **Verification** | ✅ | `/verify` → `/verify/[id]` via `verify_certificate()` (name, course, date, validity) |
+| **Printable certificate** | ✅ | `/certificate/[id]` (browser print → PDF, A4 landscape). No server PDF/QR yet |
+| **Admin** | ✅ | `/admin/certificates` (search, revoke with reason, reinstate), `/admin/certificates/policies`. Refund revokes |
+| **Not built** | ⏳ | Quizzes/projects as requirements, QR codes, emailed certificates, HMAC integrity hash |
+
+Sections below are the original design document; where they differ from the shipped migration `20260930110000_certificates.sql`, the migration wins.
+
+---|---|---|
 | **Learner UI** | ⚠️ Partial | `/dashboard/certificates` lists certificates; `/learn/[slug]/certificate` shows status card |
 | **Eligibility Gate** | ⚠️ Placeholder | `src/components/learn/eligibility-placeholder.tsx` renders static requirements checklist |
 | **Database Schema** | ⚠️ Basic | Table `public.certificates` (`id`, `user_id`, `course_id`, `certificate_number`, `issue_date`, `created_at`) |

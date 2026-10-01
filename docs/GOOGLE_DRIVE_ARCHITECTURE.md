@@ -92,7 +92,7 @@ Video players require scrubbing, seeking, and adaptive buffering. The proxy must
 - Store credentials strictly in server environment variables:
   ```env
   GOOGLE_SERVICE_ACCOUNT_EMAIL="drive-streamer@gradient-code.iam.gserviceaccount.com"
-  GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+  GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
   ```
 - **Security Invariant:** Never prefix these credentials with `NEXT_PUBLIC_`. Never bundle them in client code.
 

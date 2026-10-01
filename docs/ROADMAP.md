@@ -8,10 +8,10 @@
 | 3 | Admin CMS: courses, curriculum, lessons, Drive importer + authorised streaming, question bank, topics, resources, students, enrollments, instructors, reviews, audit log | ✅ |
 | 3b | Quizzes/module assessments, coding execution service design | ⏳ |
 | 4 | Projects, resources, notes, interview prep | ⏳ |
-| 5 | Assessments + certificate policy/eligibility + issuance + `/verify/[id]` | ⏳ |
-| 6 | Internship policy/eligibility, applications, tracker, learner profile | ⏳ |
+| 5 | Assessments + certificate policy/eligibility + issuance + `/verify/[id]` | ✅ certificates (quizzes/assessments still ⏳) |
+| 6 | Internship policy/eligibility, applications, tracker, learner profile | ✅ |
 | 7 | Paypur UPI payments + server-side enrollment + referrals (payouts, ledger) | ✅ built; awaiting live-gateway verification |
-| 8 | Admin panel | ⏳ |
+| 8 | Admin panel | ✅ (analytics, coupons, notifications ⏳) |
 | 9 | Analytics, SEO, performance, accessibility audit, final ZIP | ⏳ |
 
 Details for each phase: `docs/PRODUCT_SPEC.md`. Current state: `docs/AUDIT.md`.

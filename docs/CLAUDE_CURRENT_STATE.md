@@ -1,4 +1,4 @@
-# Current state — Gradient Code (after Phase 3, 2026-09-29)
+# Current state — Gradient Code (updated 2026-10-01)
 
 Audited from `main` at `d91fdf9` and rebased onto `f6fd3af` (Antigravity: fresh-database bootstrap `supabase/master_schema.sql`, manifest, OG image, publishable-key support), then updated with Phase 3. Facts only; anything not built is listed as missing.
 
@@ -6,7 +6,7 @@ Audited from `main` at `d91fdf9` and rebased onto `f6fd3af` (Antigravity: fresh-
 Next.js **15.5.26** App Router · React 19 · TypeScript strict · Tailwind v4 (light tokens in `src/app/globals.css`) · Supabase via `@supabase/ssr` (anon key + user session only; service-role key is used only in `src/lib/supabase/service.ts` (payments)) · Vercel. Server Components by default; mutations are Server Actions; reads go through `src/lib/data/*` (learner) and `src/lib/admin/*` (admin). Demo mode (sample data, yellow banner) when Supabase env vars are missing.
 
 ## 2. Routes
-- **Public:** `/`, `/courses`, `/courses/[slug]`, `/instructors/[slug]`, `/internships`, `/internships/[slug]`, `/pricing`, `/about`, `/verify` (form only), placeholders `/programs /projects /resources /careers /contact /terms /privacy /refund`.
+- **Public:** `/`, `/courses`, `/courses/[slug]`, `/instructors/[slug]`, `/internships`, `/internships/[slug]`, `/pricing`, `/about`, `/verify` + `/verify/[id]`, `/terms /privacy /refund /contact` (admin-editable, see §22), placeholders `/programs /projects /resources /careers`.
 - **Auth:** `/login`, `/signup`, `/forgot-password`, `/reset-password` (standard Supabase recovery link), `/auth/callback`, `/auth/signout`.
 - **Learner:** `/dashboard` (+ `/courses /certificates /applications /profile`), `/learn/[slug]` (overview, `lesson/[id]`, `practice`, `practice/[id]`, `practice/saved`, `resources`, `notes`, `interview`, `projects`, `certificate`, `internship`).
 - **Admin (Phase 3):** `/admin`, `/admin/courses` (+`new`, `[id]/edit`, `[id]/curriculum`, `[id]/lessons/[lessonId]`), `/admin/import`, `/admin/topics`, `/admin/questions`, `/admin/resources`, `/admin/students` (+`[id]`), `/admin/enrollments`, `/admin/instructors`, `/admin/reviews`, `/admin/orders`, `/admin/certificates`, `/admin/audit`, `/admin/settings`.
@@ -27,7 +27,7 @@ Fresh projects use `supabase/master_schema.sql` (all of the above up to Drive me
 All access decisions are in the database (RLS + SECURITY DEFINER RPCs `can_access_course`, `course_outline`, `lesson_content`, `enroll_free`, `submit_practice_answer`, `practice_review`). Admin writes require `has_role(uid,'admin')` in RLS **and** a server-side check in every admin page/action. Details and test matrix: `docs/SECURITY.md`.
 
 ## 7. Authentication
-Supabase email/password + Google OAuth (browser client), cookie session refreshed in `middleware.ts`; `/dashboard`, `/admin`, `/checkout` require login; `/learn` is public so free previews work (content gated by DB). Password reset not built.
+Supabase email/password + Google OAuth (browser client), cookie session refreshed in `middleware.ts`; `/dashboard`, `/admin`, `/checkout` require login; `/learn` is public so free previews work (content gated by DB). Password reset: standard Supabase recovery link (`/forgot-password` → email → `/auth/callback` → `/reset-password`). "Confirm email" is OFF for the testing phase.
 
 ## 8. Course system
 Courses have `status` (draft/published/archived, synced to legacy `is_published` by trigger) and `is_demo`. Demo courses are hidden from the public catalog. The 5 Lovable placeholder courses (no real video) were auto-flagged `is_demo`. Real courses: `full-stack-web-development-with-ai-ml` (21 modules, 224 Drive videos + 76 file "lessons"), `generative-ai-llms-agents-mcp` (8 modules, 46 lessons), `data-science-python-with-ai` (21 modules, 31 Drive videos).
@@ -48,7 +48,7 @@ Implemented: dashboard (real counts), course CRUD + publish validation + duplica
 Certificates: see section 23. Internships: see section 24. Referrals + Payments: see the Payments & referrals section below.
 
 ## 17. TODOs
-`grep -rn "TODO(antigravity" src` — player notes/resources polish, internships filters/apply, certificate list/verify, profile editor, coupon validation, Razorpay, legal page copy.
+`grep -rn "TODO(antigravity" src` — player notes/resources polish, internships filters/apply, certificate list/verify, profile editor, coupon validation, legal page copy.
 
 ## 18. Technical debt
 - 76 code/asset files in the Full Stack course were imported by Lovable as **text lessons** (they inflate lesson counts). Convert them to `course_resources` from the admin (planned tool) — nothing was changed automatically.

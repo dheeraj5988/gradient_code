@@ -9,7 +9,7 @@ Before every task read, in order:
 
 ## Stack (do not change without asking)
 Next.js 15 App Router · React 19 · TypeScript strict · Tailwind CSS v4 · Supabase (`@supabase/ssr`) ·
-Razorpay · Vercel · lucide-react · `@fontsource-variable/inter` + `jetbrains-mono`. No UI library — use `src/components/ui/*`.
+Paypur (UPI) · Vercel · lucide-react · `@fontsource-variable/inter` + `jetbrains-mono`. No UI library — use `src/components/ui/*`.
 
 ## Design rules (summary — full rules in PRODUCT_SPEC.md → VISUAL DESIGN)
 - Light-first. Colours only via tokens in `src/app/globals.css` (`bg-background`, `bg-surface`, `text-muted-foreground`, `border-border`, `bg-primary`…). Never hex values in components.
@@ -25,7 +25,7 @@ Razorpay · Vercel · lucide-react · `@fontsource-variable/inter` + `jetbrains-
 2. All DB reads go through `src/lib/data/queries.ts` (server-only). Mutations = Server Actions or route handlers.
 3. Schema changes = NEW file in `supabase/migrations/`. Never edit old migrations. RLS on every table.
 4. Never expose `lessons.video_url` to non-enrolled users (except free previews). Never trust client prices or client payment success.
-5. `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_SECRET` are server-only.
+5. `SUPABASE_SERVICE_ROLE_KEY`, Paypur key/salt (`PAYPUR_*`, `PAYMENT_SETTINGS_KEY`) and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` are server-only.
 6. Mobile-first: check 390 / 768 / 1024 / 1440 px, no horizontal scroll, visible keyboard focus.
 7. `npm run typecheck` and `npm run build` must pass before committing.
 8. One logical commit per phase, e.g. `phase-3-learning-portal`, then `git push origin main`.

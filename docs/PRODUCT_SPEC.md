@@ -1741,7 +1741,7 @@ send notification
                    PAYMENT SYSTEM
 ======================================================================
 
-Use Razorpay architecture already present where applicable.
+Use the Paypur (UPI) architecture already present where applicable.
 
 Payment flow:
 
@@ -1749,7 +1749,7 @@ Course
 ↓
 Checkout
 ↓
-Razorpay
+Paypur (UPI)
 ↓
 Payment verification
 ↓
@@ -2368,7 +2368,7 @@ Do NOT include:
 - .next
 - .env.local
 - Supabase service role keys
-- Razorpay secret keys
+- Paypur gateway key/salt
 - other secrets
 
 Name the final archive:
@@ -2797,7 +2797,7 @@ Course
  ↓
 Checkout
  ↓
-Razorpay
+Paypur (UPI)
  ↓
 Server verification
  ↓
@@ -2909,7 +2909,7 @@ node_modules/
 .env.local
 secrets
 service-role keys
-Razorpay secrets
+Paypur secrets
 So your immediate workflow is simply this
 CURRENT PROJECT
       ↓

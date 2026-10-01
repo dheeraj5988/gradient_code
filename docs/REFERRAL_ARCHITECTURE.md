@@ -2,9 +2,9 @@
 
 ## 1. System Confirmation & Current Status
 
-**Current Status (Phase 2):**
-- Referral and affiliate tracking functionality **does not currently exist** in the Gradient Code application or database schema.
-- Payment gateway integration (Razorpay) is currently an unauthenticated checkout mockup (Phase 7).
+**Current Status (2026-10-01):** implemented — see `docs/CLAUDE_CURRENT_STATE.md` §21 and migration `20260930090000_payments_referrals.sql`. The schema below is the original design; the shipped tables differ in detail.
+- Referral codes, `/r/CODE` links, ledger, 14-day hold and manual payouts are live.
+- Payments use **Paypur (UPI)**: commission is created only after the HMAC-verified callback plus server status check finalise the order.
 - **Rule:** Referral processing must **never** precede verified payment capture, and must remain completely decoupled from core payroll, teacher stipends, and internal operations.
 
 ---
@@ -16,7 +16,7 @@
    - Prevents database ID enumeration, simplifies attribution across marketing channels, and allows custom promotional naming.
 
 2. **Zero-Trust Commission Crediting:**
-   - A referral attribution is created in state `attributed` upon checkout, but **no commission entry is credited to the payable balance** until Razorpay's server-to-server webhook emits `payment.captured` with signature verification.
+   - A referral attribution is created in state `attributed` upon checkout, but **no commission entry is credited to the payable balance** until the Paypur callback signature and the server-to-server status check both confirm payment (`finalize_paid_order()`).
    - Client-reported payment success is never trusted.
 
 3. **Refund Window & Dispute Holdback:**
@@ -37,8 +37,8 @@ sequenceDiagram
     participant UI as Checkout Page
     participant Server as Next.js API / Action
     participant DB as Supabase DB
-    participant PG as Razorpay Gateway
-    participant Webhook as Webhook Route
+    participant PG as Paypur Gateway
+    participant Webhook as /api/paypur/callback
     actor Referrer as Affiliate (Referrer)
 
     Referee->>UI: Enters referral code (e.g. "CODE20")
@@ -48,7 +48,7 @@ sequenceDiagram
     Server-->>UI: Apply discounted total (calculated server-side)
 
     Referee->>PG: Completes checkout payment
-    PG-->>Webhook: Webhook: payment.captured (verified HMAC signature)
+    PG-->>Webhook: Signed callback (HMAC verified + status API re-check)
     
     Webhook->>DB: 1. Record verified order
     Webhook->>DB: 2. Insert referral_attributions row
