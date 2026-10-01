@@ -49,7 +49,7 @@ export default async function Referrals() {
 
       <section className="space-y-3 rounded-xl border border-border bg-card p-5">
         <h2 className="text-sm font-semibold">Request a payout</h2>
-        <AdminForm action={requestPayout} resetOnSuccess className="grid gap-4 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
+        <AdminForm action={requestPayout} resetOnSuccess className="grid gap-4 xl:grid-cols-[10rem_minmax(0,1fr)_auto] xl:items-end">
           <SelectInput name="method" label="Method" defaultValue="upi" options={[["upi", "UPI"], ["bank", "Bank account"]]} />
           <TextInput name="identifier" label="UPI ID / bank details" required placeholder="name@bank" />
           <SubmitButton pendingText="Requesting…">Request {available > 0 ? formatPrice(available) : "payout"}</SubmitButton>
@@ -61,7 +61,7 @@ export default async function Referrals() {
         {rows.length === 0 ? <p className="text-sm text-muted-foreground">No referred purchases yet.</p> : (
           <ul className="divide-y divide-border text-sm">
             {rows.map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 py-2"><span className="text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</span><span className="tabular-nums font-medium">{formatPrice(Number(r.commission_amount))}</span><span className="w-24 text-right text-xs">{LABEL[r.status] ?? r.status}</span></li>
+              <li key={r.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-3 [overflow-wrap:anywhere]"><span className="text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</span><span className="tabular-nums font-medium">{formatPrice(Number(r.commission_amount))}</span><span className="w-24 text-right text-xs">{LABEL[r.status] ?? r.status}</span></li>
             ))}
           </ul>
         )}

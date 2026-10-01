@@ -8,7 +8,7 @@ export function PortalPage({ title, description, actions, children }: { title: s
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold">{title}</h1>
+          <h1 className="text-2xl font-bold break-words">{title}</h1>
           {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
         </div>
         {actions}
@@ -22,8 +22,8 @@ export function Panel({ title, action, children, className }: { title?: string; 
   return (
     <section className={`min-w-0 rounded-xl border border-border bg-card ${className ?? ""}`}>
       {title ? (
-        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
-          <h2 className="text-sm font-semibold">{title}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5">
+          <h2 className="min-w-0 text-sm font-semibold break-words">{title}</h2>
           {action}
         </div>
       ) : null}

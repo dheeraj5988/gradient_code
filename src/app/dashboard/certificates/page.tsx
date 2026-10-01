@@ -23,7 +23,7 @@ export default async function CertificatesPage() {
         <ul className="mt-6 grid gap-4 sm:grid-cols-2">
           {certs.map((c) => (
             <li key={c.id} className="min-w-0 rounded-xl border border-border bg-card p-5">
-              <div className="flex items-start gap-3"><Award className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden /><div className="min-w-0"><p className="font-semibold break-words">{c.course_title ?? c.course?.title}</p><p className="mt-0.5 text-xs text-muted-foreground">Issued {new Date(c.issued_at).toLocaleDateString("en-IN")}{c.revoked_at ? " · revoked" : ""}</p><p className="mt-2 font-mono text-xs break-all">{c.certificate_number}</p></div></div>
+              <div className="flex items-start gap-3"><Award className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden /><div className="min-w-0"><p className="font-semibold break-words">{c.course_title ?? c.course?.title}</p><p className="mt-0.5 text-xs text-muted-foreground">Issued {new Date(c.issued_at).toLocaleDateString("en-IN")}{c.revoked_at ? " · revoked" : ""}</p><p className="mt-2 tabular-nums [overflow-wrap:anywhere] text-xs break-all">{c.certificate_number}</p></div></div>
               <div className="mt-4 flex flex-wrap gap-2"><ButtonLink size="sm" href={`/certificate/${c.certificate_number}`}>View & download</ButtonLink><ButtonLink size="sm" variant="outline" href={`/verify/${c.certificate_number}`}>Verify</ButtonLink></div>
             </li>
           ))}

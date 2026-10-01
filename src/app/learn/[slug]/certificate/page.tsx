@@ -48,7 +48,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ sl
             {el.certificate ? (
               <div className="rounded-lg border border-success/25 bg-success-soft p-4 text-sm">
                 <p className="font-semibold text-success">{el.certificate.revoked ? "Your certificate has been revoked." : "Certificate issued"}</p>
-                <p className="mt-1 font-mono text-xs">{el.certificate.number}</p>
+                <p className="mt-1 text-xs tabular-nums [overflow-wrap:anywhere]">{el.certificate.number}</p>
                 <div className="mt-3 flex flex-wrap gap-2"><ButtonLink size="sm" href={`/certificate/${el.certificate.number}`}>View & download</ButtonLink><ButtonLink size="sm" variant="outline" href={`/verify/${el.certificate.number}`}>Verification page</ButtonLink></div>
               </div>
             ) : el.eligible ? (
