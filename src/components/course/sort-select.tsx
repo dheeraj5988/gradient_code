@@ -14,7 +14,7 @@ export function SortSelect() {
   const pathname = usePathname();
   const sp = useSearchParams();
   return (
-    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+    <label className="flex w-full min-w-0 items-center gap-2 text-sm text-muted-foreground sm:w-auto">
       Sort by
       <select
         value={sp.get("sort") ?? "popular"}
@@ -24,7 +24,7 @@ export function SortSelect() {
           p.delete("page");
           router.push(`${pathname}?${p.toString()}`);
         }}
-        className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
+        className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground focus:border-primary focus:outline-none sm:flex-none"
       >
         {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>

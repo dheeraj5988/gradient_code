@@ -14,11 +14,11 @@ export function CourseCard({ course, priority }: { course: Course; priority?: bo
   ].filter(Boolean) as { icon: typeof Clock; text: string }[];
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-[box-shadow,transform] duration-200 hover:shadow-card motion-safe:hover:-translate-y-0.5">
+    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card transition-[box-shadow,transform] duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5">
       <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} priority={priority} />
       <div className="flex flex-1 flex-col p-4">
         <p className="text-xs font-medium text-primary">{course.track}</p>
-        <h3 className="mt-1 line-clamp-2 text-[15px] leading-snug font-semibold text-foreground">
+        <h3 className="mt-1 line-clamp-2 text-base leading-snug font-semibold text-foreground sm:text-[15px]">
           <Link href={`/courses/${course.slug}`} className="after:absolute after:inset-0 focus-visible:outline-none group-hover:text-primary">
             {course.title}
           </Link>
@@ -36,7 +36,7 @@ export function CourseCard({ course, priority }: { course: Course; priority?: bo
           {course.has_internship ? <Badge tone="success"><Briefcase className="h-3 w-3" aria-hidden />Internship pathway</Badge> : null}
           {course.is_crash_course ? <Badge tone="warning"><Zap className="h-3 w-3" aria-hidden />Short course</Badge> : null}
         </div>
-        <div className="mt-auto flex items-baseline gap-2 pt-4">
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-4">
           <span className="text-lg font-bold">{formatPrice(course.price)}</span>
           {off ? (
             <>

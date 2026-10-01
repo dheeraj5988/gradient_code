@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { SlidersHorizontal, X, SearchX } from "lucide-react";
+import { X, SearchX } from "lucide-react";
+import { CatalogFilterSheet } from "@/components/course/catalog-filter-sheet";
 import { CourseCard } from "@/components/course/course-card";
 import { SortSelect } from "@/components/course/sort-select";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -38,6 +39,14 @@ function href(sp: SP, patch: SP) {
   return s ? `/courses?${s}` : "/courses";
 }
 
+/** First, last, current ±1, with ellipses for gaps: [1, "…", 4, 5, 6, "…", 12]. */
+function pageWindow(page: number, pages: number): (number | "…")[] {
+  const keep = new Set([1, pages, page - 1, page, page + 1].filter((n) => n >= 1 && n <= pages));
+  const out: (number | "…")[] = [];
+  [...keep].sort((a, b) => a - b).forEach((n, i, arr) => { if (i && n - arr[i - 1] > 1) out.push("…"); out.push(n); });
+  return out;
+}
+
 function FilterGroup({ title, name, options, sp, type = "radio" }: {
   title: string; name: string; options: { value: string; label: string; count?: number; name?: string }[]; sp: SP; type?: "radio" | "check";
 }) {
@@ -54,12 +63,12 @@ function FilterGroup({ title, name, options, sp, type = "radio" }: {
               <Link
                 href={href(sp, { [key]: active ? undefined : o.value })}
                 aria-current={active ? "true" : undefined}
-                className="flex items-center gap-2.5 rounded-md py-1 text-sm text-muted-foreground hover:text-foreground"
+                className="flex min-h-11 items-center gap-2.5 rounded-md py-2 text-sm text-muted-foreground hover:text-foreground lg:min-h-0 lg:py-1"
               >
                 <span aria-hidden className={cn("grid h-4 w-4 shrink-0 place-items-center border", type === "radio" ? "rounded-full" : "rounded", active ? "border-primary bg-primary" : "border-border-strong bg-background")}>
                   {active ? <span className={cn("bg-primary-foreground", type === "radio" ? "h-1.5 w-1.5 rounded-full" : "h-1.5 w-2 rounded-[1px]")} /> : null}
                 </span>
-                <span className={cn("flex-1", active && "font-medium text-foreground")}>{o.label}</span>
+                <span className={cn("min-w-0 flex-1 break-words", active && "font-medium text-foreground")}>{o.label}</span>
                 {o.count != null ? <span className="text-xs text-subtle-foreground tabular-nums">{o.count}</span> : null}
               </Link>
             </li>
@@ -112,11 +121,11 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
     <div className="container-page py-8 sm:py-10">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Courses", href: "/courses" }, ...(sp.track ? [{ label: sp.track }] : [])]} />
       <div className="mt-4 mb-8">
-        <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
+        <h1 className="text-3xl font-bold break-words [overflow-wrap:anywhere] sm:text-4xl">{title}</h1>
         <p className="mt-2 text-muted-foreground">Practical, project-based courses. Preview a lesson free before you buy.</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
         {/* Desktop filters */}
         <aside aria-label="Filters" className="hidden lg:block">
           <Filters sp={sp} facets={facets} />
@@ -124,12 +133,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
 
         <div className="min-w-0">
           {/* Mobile filters */}
-          <details className="mb-4 rounded-lg border border-border lg:hidden">
-            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold">
-              <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filters {active.length ? <span className="rounded bg-primary px-1.5 text-xs text-primary-foreground">{active.length}</span> : null}
-            </summary>
-            <div className="border-t border-border p-4"><Filters sp={sp} facets={facets} /></div>
-          </details>
+          <CatalogFilterSheet count={active.length}><Filters sp={sp} facets={facets} /></CatalogFilterSheet>
 
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
             <p className="text-sm text-muted-foreground" aria-live="polite">
@@ -140,13 +144,16 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
 
           {active.length ? (
             <div className="mb-5 flex flex-wrap items-center gap-2">
-              {active.map((k) => (
-                <Link key={k} href={href(sp, { [k]: undefined, ...(k === "format" ? { crash: undefined } : {}) })} className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10">
-                  {k === "q" ? `“${sp.q}”` : LABELS[k]?.[sp[k]!] ?? sp[k]}
-                  <X className="h-3 w-3" aria-label="Remove filter" />
-                </Link>
-              ))}
-              <Link href="/courses" className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Clear all</Link>
+              {active.map((k) => {
+                const label = k === "q" ? `“${sp.q}”` : LABELS[k]?.[sp[k]!] ?? sp[k];
+                return (
+                  <Link key={k} href={href(sp, { [k]: undefined, ...(k === "format" ? { crash: undefined } : {}) })} aria-label={`Remove filter: ${label}`} className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-md border border-primary/25 bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 lg:min-h-8">
+                    <span className="min-w-0 break-words">{label}</span>
+                    <X className="h-3 w-3 shrink-0" aria-hidden />
+                  </Link>
+                );
+              })}
+              <Link href="/courses" className="inline-flex min-h-11 items-center text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline lg:min-h-8">Clear all</Link>
             </div>
           ) : null}
 
@@ -164,12 +171,15 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
           )}
 
           {pages > 1 ? (
-            <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-1">
-              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-                <Link key={p} href={href(sp, { page: p === 1 ? undefined : String(p) })} aria-current={p === page ? "page" : undefined} className={cn("grid h-9 min-w-9 place-items-center rounded-lg border px-3 text-sm", p === page ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-surface")}>
-                  {p}
-                </Link>
-              ))}
+            <nav aria-label="Pagination" className="mt-10 flex flex-wrap items-center justify-center gap-1">
+              {page > 1 ? <Link href={href(sp, { page: page - 1 === 1 ? undefined : String(page - 1) })} className="grid h-11 min-w-11 place-items-center rounded-lg border border-border px-3 text-sm hover:bg-surface">Previous</Link> : null}
+              {pageWindow(page, pages).map((p, i) =>
+                p === "…" ? <span key={`gap${i}`} aria-hidden className="grid h-11 min-w-8 place-items-center text-sm text-muted-foreground">…</span> : (
+                  <Link key={p} href={href(sp, { page: p === 1 ? undefined : String(p) })} aria-current={p === page ? "page" : undefined} aria-label={`Page ${p}`} className={cn("grid h-11 min-w-11 place-items-center rounded-lg border px-3 text-sm", p === page ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-surface")}>
+                    {p}
+                  </Link>
+                ))}
+              {page < pages ? <Link href={href(sp, { page: String(page + 1) })} className="grid h-11 min-w-11 place-items-center rounded-lg border border-border px-3 text-sm hover:bg-surface">Next</Link> : null}
             </nav>
           ) : null}
         </div>
