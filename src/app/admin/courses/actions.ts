@@ -86,7 +86,10 @@ export async function saveCourse(id: string | null, _prev: unknown, form: FormDa
   if (id) {
     const { data: before } = await ctx.supabase.from("courses").select("slug,status").eq("id", id).maybeSingle();
     if (!before) return { ok: false, error: "Course not found." };
-    const { error } = await ctx.supabase.from("courses").update(row).eq("id", id);
+    // Only touch the thumbnail if the URL field was edited — a thumbnail uploaded after this form loaded must not be wiped.
+    const { thumbnail_url, ...rest } = row;
+    const changes = thumb === str(form, "thumbnail_url_initial") ? rest : { ...rest, thumbnail_url };
+    const { error } = await ctx.supabase.from("courses").update(changes).eq("id", id);
     if (error) return { ok: false, error: `Couldn't save: ${error.message}` };
     await audit(ctx, "course.update", "course", id, `Updated course “${title}”`);
     revalidateCourse(before.slug);
@@ -152,4 +155,41 @@ export async function duplicateCourse(_prev: unknown, form: FormData): Promise<A
   await audit(ctx, "course.duplicate", "course", copy.id, `Duplicated “${c.title}”`, { source: id });
   revalidateCourse();
   return { ok: true, data: { id: copy.id }, message: "Copy created as a draft." };
+}
+
+const THUMB_TYPES: Record<string, { ext: string; magic: (b: Uint8Array) => boolean }> = {
+  "image/png": { ext: "png", magic: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
+  "image/jpeg": { ext: "jpg", magic: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  "image/webp": { ext: "webp", magic: (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50 },
+};
+
+/** Uploads a course thumbnail to the public `course-thumbnails` bucket (admin-only write via Storage RLS) and saves its URL. */
+export async function uploadCourseThumbnail(courseId: string, _prev: unknown, form: FormData): Promise<ActionResult> {
+  const g = await requireAdminAction();
+  if ("denied" in g) return g.denied;
+  const { ctx } = g;
+  if (!UUID_RE.test(courseId)) return { ok: false, error: "Invalid course." };
+  const file = form.get("file");
+  if (!(file instanceof File) || !file.size) return { ok: false, error: "Choose an image file." };
+  if (file.size > 5 * 1024 * 1024) return { ok: false, error: "Image must be 5 MB or smaller." };
+  const kind = THUMB_TYPES[file.type];
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!kind || !kind.magic(bytes)) return { ok: false, error: "Use a PNG, JPG or WebP image." };
+  const { data: course } = await ctx.supabase.from("courses").select("slug").eq("id", courseId).maybeSingle();
+  if (!course) return { ok: false, error: "Course not found." };
+
+  const path = `${courseId}/${Date.now()}.${kind.ext}`;
+  const up = await ctx.supabase.storage.from("course-thumbnails").upload(path, bytes, { contentType: file.type, upsert: false, cacheControl: "31536000" });
+  if (up.error) {
+    const missing = /bucket not found/i.test(up.error.message);
+    return { ok: false, error: missing ? "Storage bucket missing — run migration 20261001110000_course_thumbnails_bucket.sql in Supabase, then try again." : `Upload failed: ${up.error.message}` };
+  }
+  const url = ctx.supabase.storage.from("course-thumbnails").getPublicUrl(path).data.publicUrl;
+  const { error } = await ctx.supabase.from("courses").update({ thumbnail_url: url }).eq("id", courseId);
+  if (error) return { ok: false, error: error.message };
+  await audit(ctx, "course.thumbnail", "course", courseId, "Uploaded a new thumbnail", { path });
+  revalidatePath(`/admin/courses/${courseId}`, "layout");
+  revalidatePath("/courses", "layout");
+  revalidatePath(`/courses/${course.slug}`);
+  return { ok: true, data: null, message: "Thumbnail uploaded and saved." };
 }

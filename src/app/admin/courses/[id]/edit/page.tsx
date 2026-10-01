@@ -8,7 +8,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { loadCompleteness } from "@/lib/admin/course-data";
-import { duplicateCourse, setCourseStatus } from "../../actions";
+import { duplicateCourse, setCourseStatus, uploadCourseThumbnail } from "../../actions";
+import { ThumbnailUpload } from "@/components/admin/thumbnail-upload";
 
 export const metadata = { title: "Edit course" };
 
@@ -33,6 +34,7 @@ export default async function EditCourse({ params, searchParams }: { params: Pro
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="min-w-0"><CourseForm course={course} instructors={instructors ?? []} /></div>
         <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+          <ThumbnailUpload action={uploadCourseThumbnail.bind(null, id)} current={course.thumbnail_url ?? null} title={course.title} />
           <section className="rounded-xl border border-border bg-card p-5">
             <div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Content completeness</h2><span className="text-sm font-semibold tabular-nums">{result.percent}%</span></div>
             <ProgressBar value={result.percent} className="mt-2" label="Course completeness" tone={result.canPublish ? "success" : "primary"} />

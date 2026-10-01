@@ -2,12 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FileText, PlayCircle, Radio } from "lucide-react";
 import { AdminHeader, StatusPill } from "@/components/admin/table";
-import { IconAction, InlineForm } from "@/components/admin/curriculum-bits";
+import { IconAction, InlineForm, PreviewFirstForm } from "@/components/admin/curriculum-bits";
+import { ActionButton } from "@/components/admin/form";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { formatDuration } from "@/lib/utils";
-import { deleteLesson, deleteModule, moveLesson, moveModule, quickAddLesson, saveModule, toggleLessonFlag } from "../../curriculum-actions";
+import { bulkLessons, deleteLesson, deleteModule, moveLesson, moveModule, quickAddLesson, saveModule, toggleLessonFlag } from "../../curriculum-actions";
 
 export const metadata = { title: "Curriculum" };
 
@@ -33,6 +34,12 @@ export default async function Curriculum({ params }: { params: Promise<{ id: str
         description={<span className="flex flex-wrap items-center gap-2"><StatusPill status={course.status} />{modules?.length ?? 0} modules · {all.filter((l) => l.is_published).length}/{all.length} lessons published</span>}
         actions={<><ButtonLink href={`/admin/courses/${id}/edit`} variant="outline" size="sm">Course settings</ButtonLink><ButtonLink href={`/admin/import?course=${id}`} variant="outline" size="sm">Import from Drive</ButtonLink></>}
       />
+      {all.length ? (
+        <section aria-label="Publishing" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
+          <PreviewFirstForm action={bulkLessons} courseId={id} current={all.filter((l) => l.is_free_preview).length} />
+          <ActionButton action={bulkLessons} hidden={{ course_id: id, op: "publish_course" }} size="sm" confirm="Publish every lesson that has a video or content? Learners will see them once the course itself is published.">Publish all lessons</ActionButton>
+        </section>
+      ) : null}
       {!modules?.length ? <EmptyState className="mb-6" title="No modules yet" description="Add your first module below, or import a Drive folder." /> : null}
       <ol className="space-y-4">
         {(modules ?? []).map((m, mi) => {
@@ -42,7 +49,8 @@ export default async function Curriculum({ params }: { params: Promise<{ id: str
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
                 <span className="text-xs font-semibold text-subtle-foreground">Module {mi + 1}</span>
                 <h2 className="min-w-[8rem] flex-1 truncate font-semibold">{m.title}</h2>
-                <span className="text-xs text-muted-foreground">{ls.length} lesson{ls.length === 1 ? "" : "s"}</span>
+                <span className="text-xs text-muted-foreground">{ls.filter((l) => l.is_published).length}/{ls.length} published</span>
+                {ls.some((l) => !l.is_published) ? <ActionButton action={bulkLessons} hidden={{ course_id: id, module_id: m.id, op: "publish_module" }} variant="outline" size="sm">Publish module</ActionButton> : null}
                 <span className="flex">
                   <IconAction action={moveModule} hidden={{ id: m.id, dir: "up" }} label="Move module up" icon="up" />
                   <IconAction action={moveModule} hidden={{ id: m.id, dir: "down" }} label="Move module down" icon="down" />
@@ -71,6 +79,7 @@ export default async function Curriculum({ params }: { params: Promise<{ id: str
                       </span>
                       <span className="flex">
                         <IconAction action={toggleLessonFlag} hidden={{ id: l.id, field: "is_published", value: String(!l.is_published) }} label={l.is_published ? "Unpublish lesson" : "Publish lesson"} icon={l.is_published ? "eyeOff" : "eye"} />
+                        <IconAction action={toggleLessonFlag} hidden={{ id: l.id, field: "is_free_preview", value: String(!l.is_free_preview) }} label={l.is_free_preview ? "Remove free preview" : "Make free preview (anyone can watch; publish the lesson too)"} icon="preview" />
                         <IconAction action={moveLesson} hidden={{ id: l.id, dir: "up" }} label="Move lesson up" icon="up" />
                         <IconAction action={moveLesson} hidden={{ id: l.id, dir: "down" }} label="Move lesson down" icon="down" />
                         <IconAction action={deleteLesson} hidden={{ id: l.id }} label="Delete lesson" icon="trash" tone="danger" confirm={`Delete lesson “${l.title}”? This can't be undone.`} />

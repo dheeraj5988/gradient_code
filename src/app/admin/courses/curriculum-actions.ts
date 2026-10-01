@@ -247,3 +247,53 @@ export async function deleteLesson(_prev: unknown, form: FormData): Promise<Acti
   if (info) revalidateCurriculum(info.course_id, info.course?.slug);
   return { ok: true, data: null, message: "Lesson deleted." };
 }
+
+/**
+ * Bulk lesson operations for one course:
+ *  - publish_course / publish_module: publish every lesson that has content (video lessons without media are skipped);
+ *  - preview_first: make the first N lessons (curriculum order) free previews — and published — and clear preview elsewhere.
+ * Access to preview content is still enforced by the database (lesson_content / RLS).
+ */
+export async function bulkLessons(_prev: unknown, form: FormData): Promise<ActionResult> {
+  const g = await requireAdminAction();
+  if ("denied" in g) return g.denied;
+  const s = g.ctx.supabase;
+  const courseId = str(form, "course_id");
+  const moduleId = str(form, "module_id");
+  const op = str(form, "op");
+  if (!UUID_RE.test(courseId) || !["publish_course", "publish_module", "preview_first"].includes(op)) return { ok: false, error: "Invalid request." };
+  if (op === "publish_module" && !UUID_RE.test(moduleId)) return { ok: false, error: "Invalid module." };
+
+  const { data: course } = await s.from("courses").select("slug").eq("id", courseId).maybeSingle();
+  if (!course) return { ok: false, error: "Course not found." };
+  const { data: mods } = await s.from("course_modules").select("id").eq("course_id", courseId).order("order_index").order("created_at");
+  const modIds = (mods ?? []).map((m) => m.id as string);
+  if (op === "publish_module" && !modIds.includes(moduleId)) return { ok: false, error: "That module isn't part of this course." };
+  const scope = op === "publish_module" ? [moduleId] : modIds;
+  if (!scope.length) return { ok: false, error: "This course has no modules yet." };
+
+  const { data: rows, error } = await s.from("lessons").select("id,module_id,type,video_url,drive_file_id,content_text,join_url,is_published,is_free_preview,order_index").in("module_id", scope).order("order_index").order("created_at");
+  if (error) return { ok: false, error: error.message };
+  const order = new Map(modIds.map((id, i) => [id, i]));
+  const lessons = (rows ?? []).sort((a, b) => order.get(a.module_id)! - order.get(b.module_id)! || a.order_index - b.order_index);
+  const hasContent = (l: (typeof lessons)[number]) => (l.type === "video" ? !!(l.video_url || l.drive_file_id) : l.type === "live" ? !!l.join_url : true);
+
+  let message: string;
+  if (op === "preview_first") {
+    const n = Math.max(0, Math.min(10, Math.trunc(Number(str(form, "count")) || 0)));
+    const chosen = lessons.filter(hasContent).slice(0, n).map((l) => l.id as string);
+    const clear = lessons.filter((l) => l.is_free_preview && !chosen.includes(l.id)).map((l) => l.id as string);
+    if (clear.length) { const { error: e } = await s.from("lessons").update({ is_free_preview: false }).in("id", clear); if (e) return { ok: false, error: e.message }; }
+    if (chosen.length) { const { error: e } = await s.from("lessons").update({ is_free_preview: true, is_published: true }).in("id", chosen); if (e) return { ok: false, error: e.message }; }
+    message = n ? `First ${chosen.length} lesson${chosen.length === 1 ? " is" : "s are"} now a free preview (and published).` : "Free preview turned off for all lessons.";
+    await audit(g.ctx, "course.preview_first", "course", courseId, `Free preview set to the first ${chosen.length} lessons`, { lessons: chosen, cleared: clear.length });
+  } else {
+    const todo = lessons.filter((l) => !l.is_published && hasContent(l)).map((l) => l.id as string);
+    const skipped = lessons.filter((l) => !l.is_published && !hasContent(l)).length;
+    if (todo.length) { const { error: e } = await s.from("lessons").update({ is_published: true }).in("id", todo); if (e) return { ok: false, error: e.message }; }
+    message = `Published ${todo.length} lesson${todo.length === 1 ? "" : "s"}${skipped ? ` · ${skipped} skipped (no video/content yet)` : ""}.`;
+    await audit(g.ctx, op === "publish_module" ? "module.publish_all" : "course.publish_all_lessons", op === "publish_module" ? "module" : "course", op === "publish_module" ? moduleId : courseId, message, { course_id: courseId, published: todo.length, skipped });
+  }
+  revalidateCurriculum(courseId, course.slug);
+  return { ok: true, data: null, message };
+}

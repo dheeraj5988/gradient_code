@@ -30,7 +30,7 @@ export function CourseForm({ course, instructors }: { course?: any; instructors:
           <SelectInput name="track" label="Category" required defaultValue={course?.track} options={cats.map((c) => [c, c])} placeholder="Select a category" />
           <div className="md:col-span-2"><TextInput name="subtitle" label="Short description" defaultValue={course?.subtitle} maxLength={200} hint="One line shown under the title and on course cards." /></div>
           <div className="md:col-span-2"><TextArea name="description" label="Description" rows={6} defaultValue={course?.description} hint="At least 80 characters before publishing." /></div>
-          <TextInput name="thumbnail_url" label="Thumbnail URL" defaultValue={course?.thumbnail_url} placeholder="https://…" hint="16:9 image. Leave empty to use the default card design." />
+          <div><TextInput name="thumbnail_url" label="Thumbnail URL" defaultValue={course?.thumbnail_url} placeholder="https://…" hint="Or use “Upload thumbnail” on the right. 16:9 image; empty = default card design." /><input type="hidden" name="thumbnail_url_initial" value={course?.thumbnail_url ?? ""} /></div>
           <SelectInput name="instructor_id" label="Instructor" defaultValue={course?.instructor_id} options={instructors.map((i) => [i.id, i.name])} placeholder="No instructor" />
         </div>
       </section>

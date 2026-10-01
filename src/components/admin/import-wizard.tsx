@@ -107,14 +107,16 @@ export function ImportWizard({ courses, sources, defaultCourse, configured }: { 
           </section>
 
           <ol className="space-y-3">
-            {plan.modules.map((m, i) => {
+            {plan.modules.map((m) => {
               const mOff = excluded.has(`m:${m.key}`);
+              // Number real modules 1..n in Drive order; course-wide files are not a module.
+              const n = plan.modules.filter((x) => !x.courseWide).indexOf(m) + 1;
               return (
                 <li key={m.key} className={cn("rounded-xl border border-border bg-card", mOff && "opacity-60")}>
                   <label className="flex cursor-pointer items-center gap-3 border-b border-border px-4 py-3">
                     <input type="checkbox" checked={!mOff} onChange={() => toggle(`m:${m.key}`)} className="h-4 w-4 accent-[var(--primary)]" aria-label={`Include module ${m.title}`} />
                     <Folder className="h-4 w-4 text-subtle-foreground" aria-hidden />
-                    <span className="min-w-0 flex-1"><span className="block font-semibold">{i + 1}. {m.title}</span><span className="block truncate text-xs text-muted-foreground">{m.sourceName}{m.exists ? " · matches an existing module — new files are added to it" : ""}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block font-semibold">{m.courseWide ? "Course-wide materials (not a module)" : `${n}. ${m.title}`}</span><span className="block truncate text-xs text-muted-foreground">{m.sourceName}{m.exists ? " · matches an existing module — new files are added to it" : ""}</span></span>
                     <span className="text-xs text-muted-foreground">{m.lessons.length} videos · {m.resources.length} resources</span>
                   </label>
                   <details>

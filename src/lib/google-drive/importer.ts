@@ -122,7 +122,8 @@ export type PlanLesson = {
 };
 /** lessonDriveFileId: set when the file sits in a "<lesson> resources" folder next to that lesson's video. */
 export type PlanResource = { driveFileId: string; driveName: string; title: string; resourceType: ResourceKind; mimeType: string; size: number | null; exists: boolean; description: string | null; lessonDriveFileId: string | null };
-export type PlanModule = { key: string; driveFolderId: string | null; title: string; sourceName: string; exists: boolean; lessons: PlanLesson[]; resources: PlanResource[]; description: string | null; descriptionFileId: string | null };
+/** courseWide: root-level documents with no videos — imported as course-wide resources, not as a module. */
+export type PlanModule = { key: string; courseWide: boolean; driveFolderId: string | null; title: string; sourceName: string; exists: boolean; lessons: PlanLesson[]; resources: PlanResource[]; description: string | null; descriptionFileId: string | null };
 export type ImportPlan = {
   root: { id: string; name: string };
   suggestedTitle: string;
@@ -249,6 +250,7 @@ export function buildPlan(tree: Tree, existing: Existing = { moduleFolderIds: ne
     }
     return {
       key,
+      courseWide: !folder && !lessons.length,
       driveFolderId: folder?.id ?? (lessons.length ? tree.root.id : null), // root videos: keyed by the root folder so re-imports reuse the module
       // Root-level files: videos form a "Getting started" module; documents become course-wide resources.
       title: folder ? cleanTitle(folder.name, { isFolder: true }) : lessons.length ? "Getting started" : "Course materials",
