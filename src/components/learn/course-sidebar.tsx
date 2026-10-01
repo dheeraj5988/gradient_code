@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, Bookmark, BookOpen, Briefcase, CheckCircle2, ChevronDown, Circle, Code2, FileText, FolderGit2, Lock, MessagesSquare, NotebookPen, PlayCircle, Radio, LayoutGrid } from "lucide-react";
+import { Award, Bookmark, BookOpen, ListChecks, Briefcase, CheckCircle2, ChevronDown, Circle, Code2, FileText, FolderGit2, Lock, MessagesSquare, NotebookPen, PlayCircle, Radio, LayoutGrid } from "lucide-react";
 import { cn, formatDuration } from "@/lib/utils";
 
 export type SidebarModule = {
@@ -93,6 +93,7 @@ export function CourseSidebar({ slug, modules, enrolled, practiceCount, intervie
         <NavLink href={`${base}/projects`} icon={FolderGit2} label="Projects" active={is(`${base}/projects`)} />
       </Group>
       <Group title="Resources">
+        <NavLink href={`${base}/problems`} icon={ListChecks} label="Coding problems" active={is(`${base}/problems`)} />
         <NavLink href={`${base}/resources`} icon={BookOpen} label="Resources" active={is(`${base}/resources`)} />
         <NavLink href={`${base}/notes`} icon={NotebookPen} label="My notes" active={is(`${base}/notes`)} />
       </Group>

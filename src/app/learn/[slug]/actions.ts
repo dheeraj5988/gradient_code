@@ -198,3 +198,19 @@ export async function savePlan(slug: string, courseId: string, _prev: unknown, f
   revalidatePath(`/learn/${slug}`);
   return { ok: true, data: null };
 }
+
+/* ------------------------------ Coding problems ------------------------------ */
+
+/** Tick / untick a coding problem. RLS only allows ticking published problems of a course the learner can access. */
+export async function setProblemSolved(problemId: string, solved: boolean): Promise<Result> {
+  if (!ID.test(problemId)) return fail("Invalid problem.");
+  const uid = await requireUser();
+  if (!uid) return fail("Please log in.");
+  if (IS_DEMO) return { ok: true, data: null };
+  const supabase = await createClient();
+  const { error } = solved
+    ? await supabase.from("coding_problem_progress").upsert({ user_id: uid, problem_id: problemId }, { onConflict: "user_id,problem_id", ignoreDuplicates: true })
+    : await supabase.from("coding_problem_progress").delete().eq("user_id", uid).eq("problem_id", problemId);
+  if (error) return fail("Couldn't save your progress. Please try again.");
+  return { ok: true, data: null }; // the sheet updates on the client; no page refetch
+}

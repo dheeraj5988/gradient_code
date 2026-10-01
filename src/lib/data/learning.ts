@@ -396,3 +396,21 @@ export async function getNextLessons(userId: string | null, courses: { id: strin
     return next ? [{ course: c, lessonId: next.id, lessonTitle: next.title, duration: next.duration_seconds }] : [];
   });
 }
+
+/* ------------------------------ Coding problems ------------------------------ */
+
+export type CodingProblem = { id: string; module_id: string | null; title: string; platform: string; url: string; difficulty: "easy" | "medium" | "hard" | null; order_index: number; solved: boolean };
+export type CodingSheet = { problems: CodingProblem[]; error: boolean };
+
+/** Published external problems for a course (RLS: enrolled learners/admins) + this learner's solved ticks. */
+export async function getCodingSheet(courseId: string, userId: string | null): Promise<CodingSheet> {
+  if (IS_DEMO || !userId) return { problems: [], error: false };
+  const supabase = await createClient();
+  const [{ data, error }, { data: done }] = await Promise.all([
+    supabase.from("coding_problems").select("id,module_id,title,platform,url,difficulty,order_index").eq("course_id", courseId).eq("is_published", true).order("order_index"),
+    supabase.from("coding_problem_progress").select("problem_id").eq("user_id", userId),
+  ]);
+  if (error) return { problems: [], error: true }; // e.g. migration not applied yet
+  const solved = new Set((done ?? []).map((d) => d.problem_id as string));
+  return { problems: (data ?? []).map((p) => ({ ...(p as Omit<CodingProblem, "solved">), solved: solved.has(p.id as string) })), error: false };
+}
