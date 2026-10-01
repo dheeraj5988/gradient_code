@@ -74,7 +74,7 @@ export default async function PracticePage({ params, searchParams }: { params: P
       description={`Questions for ${ctx.course.title}, grouped by ${group}.`}
       actions={nextUp ? <ButtonLink href={`/learn/${slug}/practice/${nextUp.id}`}>Continue practice <ArrowRight className="h-4 w-4" aria-hidden /></ButtonLink> : null}
     >
-      <div className="grid gap-4 md:grid-cols-[auto_1fr_1fr]">
+      <div className="grid gap-4 xl:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]">
         <Panel>
           <div className="flex items-center gap-4">
             <ProgressRing value={stats.percent} size={80} label={`${stats.percent}% of practice solved`} />
@@ -106,16 +106,16 @@ export default async function PracticePage({ params, searchParams }: { params: P
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-card p-1 text-sm" role="group" aria-label="Group by">
           {GROUPS.filter(([g]) => g !== "day" || hasDays).map(([g, label]) => (
-            <Link key={g} href={qs({ group: g })} aria-current={group === g ? "true" : undefined} className={cn("rounded-md px-3 py-1.5", group === g ? "bg-primary-soft font-medium text-primary" : "text-muted-foreground hover:text-foreground")}>{label}</Link>
+            <Link key={g} href={qs({ group: g })} aria-current={group === g ? "true" : undefined} className={cn("inline-flex min-h-11 items-center rounded-md px-3", group === g ? "bg-primary-soft font-medium text-primary" : "text-muted-foreground hover:text-foreground")}>{label}</Link>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-1 text-sm" role="group" aria-label="Filter">
           {STATUS.map(([s, label]) => (
-            <Link key={s} href={qs({ status: s })} aria-current={(sp.status ?? "all") === s ? "true" : undefined} className={cn("rounded-md px-2.5 py-1.5", (sp.status ?? "all") === s ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}>{label}</Link>
+            <Link key={s} href={qs({ status: s })} aria-current={(sp.status ?? "all") === s ? "true" : undefined} className={cn("inline-flex min-h-11 items-center rounded-md px-2.5", (sp.status ?? "all") === s ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}>{label}</Link>
           ))}
           <span className="mx-1 h-4 w-px bg-border" aria-hidden />
           {(["easy", "medium", "hard"] as const).map((d) => (
-            <Link key={d} href={qs({ difficulty: sp.difficulty === d ? undefined : d })} aria-current={sp.difficulty === d ? "true" : undefined} className={cn("rounded-md px-2.5 py-1.5 capitalize", sp.difficulty === d ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}>{d}</Link>
+            <Link key={d} href={qs({ difficulty: sp.difficulty === d ? undefined : d })} aria-current={sp.difficulty === d ? "true" : undefined} className={cn("inline-flex min-h-11 items-center rounded-md px-2.5 capitalize", sp.difficulty === d ? "bg-surface-2 font-medium" : "text-muted-foreground hover:text-foreground")}>{d}</Link>
           ))}
         </div>
       </div>

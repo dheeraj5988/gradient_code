@@ -39,9 +39,9 @@ export function ProblemSheet({ problems, sections }: { problems: CodingProblem[]
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-sm font-semibold">{solved.size} of {problems.length} solved</p>
-          <div role="group" aria-label="Filter problems" className="flex gap-1 text-xs">
+          <div role="group" aria-label="Filter problems" className="flex flex-wrap gap-1 text-xs">
             {(["all", "todo", "done"] as Filter[]).map((f) => (
-              <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)} className={cn("rounded-md px-2.5 py-1 font-medium", filter === f ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-surface-2")}>
+              <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)} className={cn("inline-flex min-h-11 items-center rounded-md px-3 font-medium sm:min-h-9", filter === f ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-surface-2")}>
                 {f === "all" ? "All" : f === "todo" ? "To do" : "Solved"}
               </button>
             ))}
@@ -57,7 +57,7 @@ export function ProblemSheet({ problems, sections }: { problems: CodingProblem[]
         return (
           <section key={g.id} className="rounded-xl border border-border bg-card">
             <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-              <h2 className="min-w-0 truncate text-sm font-semibold">{g.title}</h2>
+              <h2 className="min-w-0 text-sm font-semibold break-words">{g.title}</h2>
               <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{done}/{g.items.length}</span>
             </header>
             {items.length ? (
@@ -67,13 +67,15 @@ export function ProblemSheet({ problems, sections }: { problems: CodingProblem[]
                   return (
                     <li key={p.id} className="flex items-center gap-3 px-4 py-2.5">
                       <button type="button" role="checkbox" aria-checked={isDone} aria-label={`Mark “${p.title}” as ${isDone ? "not solved" : "solved"}`} onClick={() => toggle(p.id)}
-                        className="grid h-8 w-8 shrink-0 place-items-center rounded-md hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-primary">
+                        className="grid h-11 w-11 shrink-0 place-items-center rounded-md hover:bg-surface-2">
                         {isDone ? <CheckCircle2 className="h-5 w-5 text-success" aria-hidden /> : <Circle className="h-5 w-5 text-subtle-foreground" aria-hidden />}
                       </button>
-                      <span className={cn("min-w-0 flex-1 text-sm", isDone && "text-muted-foreground line-through")}>{p.title}</span>
-                      {p.difficulty ? <span className={cn("hidden text-xs font-medium capitalize sm:inline", DIFF_TONE[p.difficulty])}>{p.difficulty}</span> : null}
+                      <span className="min-w-0 flex-1">
+                        <span className={cn("block text-sm break-words", isDone && "text-muted-foreground line-through")}>{p.title}</span>
+                        {p.difficulty ? <span className={cn("text-xs font-medium capitalize", DIFF_TONE[p.difficulty])}>{p.difficulty}</span> : null}
+                      </span>
                       <Badge className="hidden md:inline-flex">{PLATFORM[p.platform] ?? p.platform}</Badge>
-                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary-soft">
+                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-primary hover:bg-primary-soft">
                         Solve<span className="sr-only"> “{p.title}” on {PLATFORM[p.platform] ?? p.platform} (opens in a new tab)</span><ExternalLink className="h-3.5 w-3.5" aria-hidden />
                       </a>
                     </li>

@@ -21,12 +21,12 @@ export function NoteItem({ slug, note, lessonTitle, lessonHref, onDeleted, onUpd
         {note.video_timestamp_seconds != null ? <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" aria-hidden />{fmt(note.video_timestamp_seconds)}</span> : null}
         <span>{new Date(note.updated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
         <span className="ml-auto flex gap-1">
-          <button onClick={() => setEditing((v) => !v)} aria-label="Edit note" className="grid h-7 w-7 place-items-center rounded-md hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" /></button>
+          <button onClick={() => setEditing((v) => !v)} aria-label="Edit note" className="grid h-11 w-11 place-items-center rounded-md hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" /></button>
           <button
             aria-label="Delete note"
             disabled={pending}
             onClick={() => { if (confirm("Delete this note? This can't be undone.")) start(async () => { const r = await deleteNote(slug, note.id); if (!r.ok) setError(r.error); else onDeleted?.(note.id); }); }}
-            className="grid h-7 w-7 place-items-center rounded-md text-danger hover:bg-danger-soft"
+            className="grid h-11 w-11 place-items-center rounded-md text-danger hover:bg-danger-soft"
           ><Trash2 className="h-3.5 w-3.5" /></button>
         </span>
       </div>
@@ -40,7 +40,7 @@ export function NoteItem({ slug, note, lessonTitle, lessonHref, onDeleted, onUpd
           </div>
         </form>
       ) : (
-        <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+        <p className="text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">{note.content}</p>
       )}
       {error ? <p role="alert" className="mt-2 text-xs text-danger">{error}</p> : null}
     </li>
