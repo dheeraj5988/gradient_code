@@ -17,7 +17,6 @@ export function courseCompleteness(c: CompletenessInput) {
   const lessons = c.modules.flatMap((m) => m.lessons);
   const published = lessons.filter((l) => l.is_published);
   const videoWithoutMedia = published.filter((l) => l.type === "video" && !l.hasMedia).length;
-  const noDesc = published.filter((l) => !l.hasDescription).length;
   const emptyModules = c.modules.filter((m) => !m.lessons.some((l) => l.is_published)).length;
   const checks: Check[] = [
     { key: "title", label: "Title", ok: c.title.trim().length >= 5, required: true },
@@ -32,7 +31,6 @@ export function courseCompleteness(c: CompletenessInput) {
     { key: "outcomes", label: "What you'll learn (3+ points)", ok: c.what_you_learn.length >= 3, required: false },
     { key: "preview", label: "A free preview lesson", ok: published.some((l) => l.is_free_preview), required: false },
     { key: "emptyModules", label: "No empty modules", ok: emptyModules === 0, required: false, detail: emptyModules ? `${emptyModules} module${emptyModules > 1 ? "s" : ""} without published lessons` : undefined },
-    { key: "lessonDescriptions", label: "Lesson descriptions", ok: noDesc === 0, required: false, detail: noDesc ? `${noDesc} lesson${noDesc > 1 ? "s" : ""} without a description` : undefined },
   ];
   const percent = Math.round((checks.filter((x) => x.ok).length / checks.length) * 100);
   const blockers = checks.filter((x) => x.required && !x.ok);
