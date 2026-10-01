@@ -20,10 +20,10 @@ export function Curriculum({ modules, initiallyOpen = 1 }: { modules: Module[]; 
                 {m.lessons.map((l) => {
                   const Icon = l.type === "text" ? FileText : l.type === "live" ? Radio : PlayCircle;
                   return (
-                    <li key={l.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm sm:px-5 sm:pl-11">
+                    <li key={l.id} className="flex min-h-11 items-center justify-between gap-3 px-4 py-2.5 text-sm sm:px-5 sm:pl-11">
                       <span className="flex min-w-0 items-center gap-2.5">
                         <Icon className="h-4 w-4 shrink-0 text-subtle-foreground" aria-hidden />
-                        <span className="min-w-0">{l.title}</span>
+                        <span className="min-w-0 break-words">{l.title}</span>
                       </span>
                       <span className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
                         {l.is_free_preview ? <span className="font-medium text-primary">Preview</span> : <Lock className="h-3.5 w-3.5 text-subtle-foreground" aria-label="Locked" />}

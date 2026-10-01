@@ -11,6 +11,7 @@ import { Rating } from "@/components/rating";
 import { CourseThumb } from "@/components/course-thumb";
 import { Curriculum } from "@/components/course/curriculum";
 import { CourseCard } from "@/components/course/course-card";
+import { MobileBuyBar } from "@/components/course/mobile-buy-bar";
 import { getCourseBySlug, getCurriculum, getInstructor, getInternships, getRelatedCourses, getReviews, isEnrolled, isWishlisted } from "@/lib/data/queries";
 import { getUser } from "@/lib/supabase/server";
 import { cn, discountPercent, formatCount, formatDuration, formatPrice } from "@/lib/utils";
@@ -84,6 +85,11 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
     course.has_internship ? { icon: Briefcase, text: "Internship pathway" } : null,
   ].filter(Boolean) as { icon: typeof Clock; text: string }[];
 
+  // One CTA, derived on the server, shared by the desktop card and the phone buy bar.
+  const ctaHref = enrolled ? `/learn/${course.slug}` : `/checkout/${course.slug}`;
+  const ctaLabel = enrolled ? "Go to course" : course.price ? "Buy now" : "Enroll for free";
+  const SECTION_OFFSET = "scroll-mt-[calc(var(--gc-site-header)+4rem)]";
+
   const sections = [
     ["overview", "Overview"],
     ["curriculum", "Curriculum"],
@@ -99,9 +105,9 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
       {/* Header band */}
       <section className="border-b border-border bg-surface">
         <div className="container-page py-8 lg:py-10">
-          <div className="lg:max-w-[calc(100%-400px)]">
+          <div className="max-w-3xl">
             <Breadcrumbs items={[{ label: "Courses", href: "/courses" }, { label: course.track, href: `/courses?track=${encodeURIComponent(course.track)}` }, { label: course.title }]} />
-            <h1 className="mt-4 text-3xl font-bold leading-tight text-balance sm:text-4xl">{course.title}</h1>
+            <h1 className="mt-4 text-3xl font-bold leading-tight text-balance break-words sm:text-4xl">{course.title}</h1>
             {course.subtitle ? <p className="mt-3 text-lg text-muted-foreground">{course.subtitle}</p> : null}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
               {course.is_featured ? <Badge tone="warning">Featured</Badge> : null}
@@ -123,10 +129,10 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
         </div>
       </section>
 
-      <div className="container-page grid gap-10 pb-16 lg:grid-cols-[1fr_360px]">
+      <div className="container-page grid gap-6 pb-12 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10 lg:pt-8">
         {/* Purchase panel */}
-        <aside className="order-first -mt-0 pt-6 lg:order-last lg:-mt-[260px] lg:pt-0">
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg lg:sticky lg:top-20">
+        <aside className="order-first pt-6 lg:order-last lg:pt-0">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card lg:sticky lg:top-[calc(var(--gc-site-header)+1rem)]">
             <div className="relative">
               <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} priority />
               {preview ? (
@@ -146,14 +152,15 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
                 ) : null}
               </div>
               {enrolled ? (
-                <ButtonLink href={`/learn/${course.slug}`} size="lg" className="w-full">Go to course</ButtonLink>
+                <ButtonLink href={ctaHref} size="lg" className="hidden w-full lg:inline-flex">{ctaLabel}</ButtonLink>
               ) : (
                 <div className="grid gap-2">
-                  <ButtonLink href={`/checkout/${course.slug}`} size="lg" className="w-full">{course.price ? "Buy now" : "Enroll for free"}</ButtonLink>
+                  {/* Below lg the principal CTA lives in the fixed buy bar (no duplicate). */}
+                  <ButtonLink href={ctaHref} size="lg" className="hidden w-full lg:inline-flex">{ctaLabel}</ButtonLink>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
                     {preview ? <ButtonLink href={`/learn/${course.slug}/lesson/${preview.id}`} variant="outline" className="w-full">Preview</ButtonLink> : <span />}
                     <form action={toggleWishlist.bind(null, course.id, course.slug, saved)}>
-                      <button aria-pressed={saved} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} className={buttonClass({ variant: "outline" }, "w-10 px-0")}>
+                      <button aria-pressed={saved} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} className={buttonClass({ variant: "outline" }, "w-11 px-0")}>
                         <Heart className={cn("h-4 w-4", saved && "fill-danger text-danger")} aria-hidden />
                       </button>
                     </form>
@@ -175,16 +182,16 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
 
         <div className="min-w-0">
           {/* In-page nav */}
-          <nav aria-label="Course sections" className="sticky top-16 z-10 -mx-4 mb-8 overflow-x-auto border-b border-border bg-background/95 px-4 backdrop-blur sm:mx-0 sm:px-0">
+          <nav aria-label="Course sections" className="glass sticky top-[var(--gc-site-header)] z-10 -mx-4 mb-8 max-w-[calc(100%+2rem)] min-w-0 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:max-w-full sm:px-0">
             <ul className="flex gap-6">
               {sections.map(([id, label]) => (
-                <li key={id}><a href={`#${id}`} className="block border-b-2 border-transparent py-3 text-sm font-medium whitespace-nowrap text-muted-foreground hover:border-border-strong hover:text-foreground">{label}</a></li>
+                <li key={id}><a href={`#${id}`} className="flex min-h-11 items-center border-b-2 border-transparent text-sm font-medium whitespace-nowrap text-muted-foreground hover:border-border-strong hover:text-foreground">{label}</a></li>
               ))}
             </ul>
           </nav>
 
           <div className="space-y-12">
-            <section id="overview" className="scroll-mt-32 space-y-10">
+            <section id="overview" className={`${SECTION_OFFSET} space-y-10`}>
               {course.what_you_learn.length ? (
                 <div className="rounded-xl border border-border p-6">
                   <h2 className="mb-4 text-xl font-bold">What you&apos;ll learn</h2>
@@ -201,7 +208,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
               ) : null}
             </section>
 
-            <section id="curriculum" className="scroll-mt-32">
+            <section id="curriculum" className={SECTION_OFFSET}>
               <h2 className="mb-4 text-xl font-bold">Curriculum</h2>
               {modules.length ? <Curriculum modules={modules} /> : <EmptyState title="Curriculum coming soon" description="The full lesson list will appear here once it is published." />}
             </section>
@@ -236,7 +243,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
             ) : null}
 
             {course.instructor ? (
-              <section id="instructor" className="scroll-mt-32">
+              <section id="instructor" className={SECTION_OFFSET}>
                 <h2 className="mb-4 text-xl font-bold">Instructor</h2>
                 <div className="rounded-xl border border-border p-6">
                   <div className="flex items-center gap-4">
@@ -280,7 +287,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
               </section>
             ) : null}
 
-            <section id="reviews" className="scroll-mt-32">
+            <section id="reviews" className={SECTION_OFFSET}>
               <h2 className="mb-4 text-xl font-bold">Learner reviews</h2>
               {reviews.length ? (
                 <div className="grid gap-8 md:grid-cols-[220px_1fr]">
@@ -315,7 +322,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
               )}
             </section>
 
-            <section id="faq" className="scroll-mt-32">
+            <section id="faq" className={SECTION_OFFSET}>
               <h2 className="mb-4 text-xl font-bold">Frequently asked questions</h2>
               <Accordion>
                 {COURSE_FAQ.map((f) => (
@@ -326,6 +333,12 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
           </div>
         </div>
       </div>
+
+      <MobileBuyBar
+        priceLabel={enrolled ? "Enrolled" : formatPrice(course.price)}
+        sublabel={enrolled ? "You have access" : off ? `${off}% off · was ${formatPrice(course.mrp!)}` : undefined}
+        cta={<ButtonLink href={ctaHref} size="lg" className="w-full min-w-0 px-3">{ctaLabel}</ButtonLink>}
+      />
 
       {related.length ? (
         <section className="border-t border-border bg-surface py-12">
