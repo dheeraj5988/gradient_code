@@ -1,5 +1,6 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/data/queries";
 import { requireAdminAction, type ActionResult } from "@/lib/admin/guard";
 import { audit } from "@/lib/admin/audit";
 import { SLUG_RE, UUID_RE, slugify, str } from "@/lib/admin/util";
@@ -72,6 +73,7 @@ export async function saveInstructor(id: string | null, _prev: unknown, form: Fo
   const res = id ? await g.ctx.supabase.from("instructors").update(row).eq("id", id).select("id").single() : await g.ctx.supabase.from("instructors").insert(row).select("id").single();
   if (res.error) return { ok: false, error: res.error.code === "23505" ? "Slug already used by another instructor." : res.error.message };
   await audit(g.ctx, id ? "instructor.update" : "instructor.create", "instructor", res.data.id, `${id ? "Updated" : "Added"} instructor ${name}`);
+  revalidateTag(CATALOG_TAG); // instructor names shown on course cards
   revalidatePath("/admin", "layout");
   revalidatePath(`/instructors/${slug}`);
   return { ok: true, data: { id: res.data.id }, message: "Instructor saved." };
@@ -86,6 +88,7 @@ export async function moderateReview(_prev: unknown, form: FormData): Promise<Ac
   const { data, error } = await g.ctx.supabase.from("course_reviews").update({ is_hidden: hide, moderated_by: g.ctx.userId, moderated_at: new Date().toISOString() }).eq("id", id).select("course_id").single();
   if (error) return { ok: false, error: error.message };
   await audit(g.ctx, hide ? "review.hide" : "review.restore", "review", id, hide ? "Hid a review" : "Restored a review", { course_id: data.course_id });
+  revalidateTag(CATALOG_TAG); // ratings shown on course cards
   revalidatePath("/admin", "layout");
   revalidatePath("/courses", "layout");
   return { ok: true, data: null, message: hide ? "Review hidden." : "Review restored." };

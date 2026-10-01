@@ -1,6 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { IS_DEMO } from "@/lib/supabase/env";
+import { unstable_cache } from "next/cache";
+import { createClient as createPublicClient } from "@supabase/supabase-js";
+import { IS_DEMO, SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/env";
 import { DEMO_COURSES, DEMO_INSTRUCTORS, DEMO_INTERNSHIPS, DEMO_REVIEWS, demoCurriculum } from "./demo";
 import type { Course, CourseFilters, Instructor, Internship, Module, Review } from "./types";
 
@@ -77,17 +79,33 @@ function applyFilters(list: Course[], f: CourseFilters) {
 
 const COURSE_SELECT = "*, instructor:instructors(slug,name,headline,avatar_url)";
 
+/** Tag for the shared public-catalog cache. Admin actions that change course cards call revalidateTag(CATALOG_TAG). */
+export const CATALOG_TAG = "catalog";
+
+/**
+ * Published, non-demo courses — public data, so it is read with a cookie-less client and cached for
+ * all visitors (5 min, or until an admin edit revalidates the tag). Pages used to run this same
+ * query 2–4 times per request.
+ */
+const fetchPublishedCourses = unstable_cache(
+  async (): Promise<Course[]> => {
+    const supabase = createPublicClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+    // Demo/test courses (is_demo) are never part of the public catalog, even if published.
+    let { data, error } = await supabase.from("courses").select(COURSE_SELECT).eq("is_published", true).eq("is_demo", false);
+    if (error) {
+      // Older schema (Phase 3 / marketplace migrations not applied yet) — fall back to the plain table.
+      ({ data, error } = await supabase.from("courses").select("*").eq("is_published", true));
+    }
+    if (error) throw error;
+    return (data ?? []).map(mapCourse);
+  },
+  ["published-courses-v1"],
+  { revalidate: 300, tags: [CATALOG_TAG] },
+);
+
 async function allPublishedCourses(): Promise<Course[]> {
   if (IS_DEMO) return DEMO_COURSES;
-  const supabase = await createClient();
-  // Demo/test courses (is_demo) are never part of the public catalog, even if published.
-  let { data, error } = await supabase.from("courses").select(COURSE_SELECT).eq("is_published", true).eq("is_demo", false);
-  if (error) {
-    // Older schema (Phase 3 / marketplace migrations not applied yet) — fall back to the plain table.
-    ({ data, error } = await supabase.from("courses").select("*").eq("is_published", true));
-  }
-  if (error) throw error;
-  return (data ?? []).map(mapCourse);
+  return fetchPublishedCourses();
 }
 
 export async function getCourses(filters: CourseFilters = {}) {

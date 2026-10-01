@@ -21,9 +21,11 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getUser();
+  // getClaims() refreshes an expired session (like getUser) but verifies the login cookie's JWT
+  // locally with the project's public ES256 key — no round trip to Supabase Auth on every request.
+  const { data } = await supabase.auth.getClaims();
   const path = request.nextUrl.pathname;
-  if (!data.user && PROTECTED.some((p) => path.startsWith(p))) {
+  if (!data?.claims?.sub && PROTECTED.some((p) => path.startsWith(p))) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);

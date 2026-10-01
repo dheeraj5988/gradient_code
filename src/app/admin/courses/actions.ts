@@ -1,5 +1,6 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/data/queries";
 import { requireAdminAction, type ActionResult } from "@/lib/admin/guard";
 import { audit } from "@/lib/admin/audit";
 import { loadCompleteness } from "@/lib/admin/course-data";
@@ -11,6 +12,7 @@ import { createServiceClient, serviceConfigured } from "@/lib/supabase/service";
 const LEVELS = ["Beginner", "Intermediate", "Advanced", "All levels"];
 
 function revalidateCourse(slug?: string) {
+  revalidateTag(CATALOG_TAG);
   revalidatePath("/admin", "layout");
   revalidatePath("/courses");
   revalidatePath("/");
@@ -200,6 +202,7 @@ export async function uploadCourseThumbnail(courseId: string, _prev: unknown, fo
   const { error } = await ctx.supabase.from("courses").update({ thumbnail_url: url }).eq("id", courseId);
   if (error) return { ok: false, error: error.message };
   await audit(ctx, "course.thumbnail", "course", courseId, "Uploaded a new thumbnail", { path });
+  revalidateTag(CATALOG_TAG);
   revalidatePath(`/admin/courses/${courseId}`, "layout");
   revalidatePath("/courses", "layout");
   revalidatePath(`/courses/${course.slug}`);
