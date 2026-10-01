@@ -27,14 +27,16 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
   const course = (Array.isArray(o.courses) ? o.courses[0] : o.courses) as { title: string; slug: string } | null;
   if (!course || course.slug !== slug) notFound();
 
-  const state = o.status === "paid" ? "paid" : o.status === "failed" ? "failed" : o.status === "refunded" ? "refunded" : "pending";
-  const Icon = state === "paid" ? CheckCircle2 : state === "pending" ? Clock : XCircle;
-  const tone = state === "paid" ? "text-success bg-success-soft" : state === "pending" ? "text-warning bg-warning-soft" : "text-danger bg-danger-soft";
-  const title = { paid: "Payment successful", pending: "Waiting for confirmation", failed: "Payment didn't go through", refunded: "This payment was refunded" }[state];
+  // amount_mismatch: the gateway confirmed a payment but the amount check failed — money may have been taken, so treat it as "needs review", never "not charged".
+  const state = o.status === "paid" ? "paid" : o.status === "failed" && o.failure_reason === "amount_mismatch" ? "review" : o.status === "failed" ? "failed" : o.status === "refunded" ? "refunded" : "pending";
+  const Icon = state === "paid" ? CheckCircle2 : state === "pending" || state === "review" ? Clock : XCircle;
+  const tone = state === "paid" ? "text-success bg-success-soft" : state === "pending" || state === "review" ? "text-warning bg-warning-soft" : "text-danger bg-danger-soft";
+  const title = { paid: "Payment successful", pending: "Waiting for confirmation", review: "Payment received — confirming", failed: "Payment didn't go through", refunded: "This payment was refunded" }[state];
   const text = {
     paid: `You now have access to ${course.title}.`,
     pending: "Your bank or UPI app hasn't confirmed this payment yet. If money was debited, it will be confirmed shortly — press the button to check again.",
-    failed: "No access was granted and you were not charged for this order. You can try again.",
+    review: "We received your payment but couldn't confirm it automatically. Press the button to check again. If it still doesn't unlock, contact support with this order ID — we'll grant access or refund you.",
+    failed: "No access was granted for this order. If money was debited, your bank usually returns it automatically within a few days — or contact support with this order ID.",
     refunded: "Access for this order has been removed.",
   }[state];
 
@@ -49,7 +51,7 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
           <p className="mt-3 text-xs text-muted-foreground tabular-nums">Order {o.id.slice(0, 8)} · {formatPrice(Number(o.amount))}{o.test_mode ? " · test payment" : ""}</p>
           <div className="mt-6 flex flex-col gap-2">
             {state === "paid" ? <ButtonLink size="lg" href={`/learn/${slug}`}>Start learning</ButtonLink> : null}
-            {state === "pending" ? <form action={checkPaymentStatus.bind(null, slug, o.id)}><Button size="lg" className="w-full">Check payment status</Button></form> : null}
+            {state === "pending" || state === "review" || state === "failed" ? <form action={checkPaymentStatus.bind(null, slug, o.id)}><Button size="lg" variant={state === "failed" ? "outline" : "primary"} className="w-full">Check payment status</Button></form> : null}
             {state === "failed" ? <ButtonLink size="lg" href={`/checkout/${slug}`}>Try again</ButtonLink> : null}
             <ButtonLink variant="outline" href="/dashboard">Go to dashboard</ButtonLink>
           </div>

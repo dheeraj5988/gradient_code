@@ -36,7 +36,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
               <summary className="cursor-pointer text-primary">Refund…</summary>
               <div className="mt-2 w-56"><AdminForm action={markOrderRefunded}><input type="hidden" name="id" value={o.id} /><TextInput name="note" label="Paypur refund reference" required /><SubmitButton variant="outline" size="sm" pendingText="Working…">Mark refunded</SubmitButton></AdminForm></div>
             </details>
-          ) : o.status === "pending" || o.status === "created" ? (
+          ) : o.status === "pending" || o.status === "created" || o.status === "failed" ? (
             <ActionButton key="x" action={recheckOrder} hidden={{ id: o.id }} variant="outline" size="sm">Recheck with gateway</ActionButton>
           ) : null,
         ] }))}

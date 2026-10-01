@@ -128,7 +128,7 @@ export async function recheckOrder(_prev: unknown, form: FormData): Promise<Acti
   if (!serviceConfigured()) return { ok: false, error: "No Supabase server key on the server." };
   const { data: o } = await createServiceClient().from("orders").select("provider_order_id,provider_txn_id,status").eq("id", id).maybeSingle();
   if (!o?.provider_order_id) return { ok: false, error: "Order not found." };
-  if (!["created", "pending"].includes(o.status)) return { ok: false, error: `Order is already ${o.status}.` };
+  if (!["created", "pending", "failed"].includes(o.status)) return { ok: false, error: `Order is already ${o.status}.` };
   if (!o.provider_txn_id) return { ok: false, error: "Paypur never returned a transaction ID for this order (payment wasn't started)." };
   const r = await confirmOrder(o.provider_order_id, null);
   await audit(g.ctx, "order.recheck", "order", id, `Rechecked with gateway: ${r.status}`, { result: r.status });
