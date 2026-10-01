@@ -104,11 +104,11 @@ export function VideoPlayer({
   // Unavailable or playback error fallback state
   if (source.kind === "unavailable" || hasError) {
     return (
-      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black flex items-center justify-center p-6 text-center text-white">
+      <div className="relative flex min-h-56 w-full items-center justify-center rounded-lg bg-media p-6 text-center text-on-media sm:min-h-72">
         <div className="max-w-md">
-          <AlertCircle className="mx-auto h-8 w-8 text-danger-hover opacity-90" aria-hidden />
-          <p className="mt-3 text-base font-semibold text-white">Video unavailable</p>
-          <p className="mt-1.5 text-xs text-white/70 leading-relaxed">
+          <AlertCircle className="mx-auto h-8 w-8 text-danger opacity-90" aria-hidden />
+          <p className="mt-3 text-base font-semibold text-on-media">Video unavailable</p>
+          <p className="mt-1.5 text-xs text-on-media/70 leading-relaxed">
             {source.kind === "unavailable" && source.message
               ? source.message
               : "Video playback is temporarily unavailable. Please try again later."}
@@ -125,7 +125,7 @@ export function VideoPlayer({
                     videoRef.current.play().catch(() => {});
                   }
                 }}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-xs font-semibold text-black hover:bg-white/90 transition shadow-sm"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-on-media px-3.5 text-xs font-semibold text-media hover:bg-on-media/90 transition shadow-sm"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Try again
@@ -134,7 +134,7 @@ export function VideoPlayer({
             {courseHref ? (
               <Link
                 href={courseHref}
-                className="inline-flex h-9 items-center rounded-lg border border-white/20 bg-white/10 px-3.5 text-xs font-medium text-white hover:bg-white/20 transition"
+                className="inline-flex min-h-11 items-center rounded-lg border border-on-media/20 bg-on-media/10 px-3.5 text-xs font-medium text-on-media hover:bg-on-media/20 transition"
               >
                 Back to course
               </Link>
@@ -146,7 +146,7 @@ export function VideoPlayer({
   }
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+    <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-media">
       {source.kind === "file" ? (
         <>
           <video
@@ -179,8 +179,8 @@ export function VideoPlayer({
             ))}
           </video>
           {loading && !hasError ? (
-            <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40">
-              <Loader2 className="h-8 w-8 animate-spin text-white/80" aria-hidden />
+            <div className="pointer-events-none absolute inset-0 grid place-items-center bg-media/40">
+              <Loader2 className="h-8 w-8 animate-spin text-on-media/80" aria-hidden />
             </div>
           ) : null}
         </>
@@ -205,7 +205,7 @@ export function VideoPlayer({
       {resumed && (source.kind === "file" || isYouTube) ? (
         <button
           onClick={() => setResumed(false)}
-          className="absolute top-3 left-3 z-10 rounded-md bg-foreground/80 px-2.5 py-1 text-xs font-medium text-background backdrop-blur shadow-sm hover:bg-foreground transition"
+          className="absolute top-3 left-3 z-10 max-w-[calc(100%-1.5rem)] rounded-md bg-foreground/80 px-2.5 py-1 text-xs font-medium text-wrap text-background shadow-sm hover:bg-foreground transition"
         >
           Resumed at {fmt(initialPosition)} ✕
         </button>

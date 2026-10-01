@@ -18,7 +18,7 @@ export function Tabs({ tabs, className }: { tabs: { id: string; label: string; c
 
   return (
     <div className={className}>
-      <div role="tablist" className="flex gap-6 overflow-x-auto border-b border-border">
+      <div role="tablist" className="flex gap-6 overflow-x-auto overflow-y-hidden border-b border-border">
         {tabs.map((t, i) => (
           <button
             key={t.id}

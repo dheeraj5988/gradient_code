@@ -65,30 +65,31 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
   const hrefs = await Promise.all(lessonResources.map(resourceHref));
 
   return (
-    <div className="pb-24 lg:pb-8">
-      <div className="bg-black">
-        <div className="mx-auto aspect-video max-h-[68vh] w-full max-w-6xl">
+    <div className="pb-8">
+      <div className="bg-media">
+        {/* The player owns the 16:9 ratio; fallback states below may grow to fit their text. */}
+        <div className="mx-auto w-full max-w-6xl">
           {content === null ? (
-            <div className="grid h-full place-items-center p-6 text-center text-white">
+            <div className="grid min-h-48 place-items-center px-4 py-6 text-center text-on-media sm:min-h-64">
               <div>
                 <Lock className="mx-auto h-8 w-8 opacity-70" aria-hidden />
                 <p className="mt-3 font-semibold">This lesson is part of the full course</p>
                 <p className="mt-1 text-sm opacity-70">Enroll to watch every lesson.</p>
-                <Link href={`/courses/${slug}`} className="mt-4 inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-semibold hover:bg-primary-hover">View enrollment options</Link>
+                <Link href={`/courses/${slug}`} className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">View enrollment options</Link>
               </div>
             </div>
           ) : source ? (
             <VideoPlayer key={lesson.id} source={source} lessonId={lesson.id} title={lesson.title} initialPosition={position} track={enrolled} courseHref={base} captions={captions} />
           ) : lesson.type === "live" && content.join_url ? (
-            <div className="grid h-full place-items-center p-6 text-center text-white">
+            <div className="grid min-h-48 place-items-center px-4 py-6 text-center text-on-media sm:min-h-64">
               <div>
                 <Radio className="mx-auto h-8 w-8" aria-hidden />
                 <p className="mt-3 font-semibold">Live session</p>
-                <a href={content.join_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-semibold">Join session</a>
+                <a href={content.join_url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">Join session</a>
               </div>
             </div>
           ) : (
-            <div className="grid h-full place-items-center p-6 text-center text-white/80">
+            <div className="grid min-h-48 place-items-center px-4 py-6 text-center text-on-media sm:min-h-64 text-on-media/80">
               <p className="text-sm">{lesson.type === "text" ? "This is a reading lesson — see the content below." : "The video for this lesson hasn't been uploaded yet."}</p>
             </div>
           )}
@@ -99,7 +100,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
         <Breadcrumbs items={[{ label: ctx.course.title, href: base }, { label: mod?.title ?? "Module" }, { label: `Lesson ${idx + 1}` }]} />
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold sm:text-2xl">{lesson.title}</h1>
+            <h1 className="text-xl font-bold break-words sm:text-2xl">{lesson.title}</h1>
             <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
               <span>Lesson {idx + 1} of {ctx.lessons.length}</span>
               {lesson.duration_seconds ? <span className="inline-flex items-center gap-1"><Clock className="h-4 w-4" aria-hidden />{formatDuration(lesson.duration_seconds)}</span> : null}
@@ -108,6 +109,15 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
           </div>
           {enrolled ? <CompleteButton slug={slug} lessonId={lesson.id} done={done} nextHref={next ? `${base}/lesson/${next.id}` : undefined} className="hidden lg:block" /> : null}
         </div>
+
+        {/* Phones/tablets: actions sit in the flow right under the title (no fixed bar over notes/keyboard). */}
+        <nav aria-label="Lesson actions" className="mt-4 grid grid-cols-[44px_minmax(0,1fr)_44px] items-start gap-2 rounded-xl border border-border bg-card p-2 lg:hidden">
+          <ButtonLink href={prev ? `${base}/lesson/${prev.id}` : base} variant="outline" aria-label={prev ? "Previous lesson" : "Back to overview"} className="h-11 w-11 px-0"><ChevronLeft className="h-4 w-4" aria-hidden /></ButtonLink>
+          <div className="min-w-0">
+            {enrolled ? <CompleteButton slug={slug} lessonId={lesson.id} done={done} nextHref={next ? `${base}/lesson/${next.id}` : undefined} compact className="[&>button]:min-h-11 [&>button]:w-full [&>button]:whitespace-normal" /> : <ButtonLink href={`/courses/${slug}`} className="min-h-11 w-full">Enroll</ButtonLink>}
+          </div>
+          <ButtonLink href={next ? `${base}/lesson/${next.id}` : base} variant="outline" aria-label={next ? "Next lesson" : "Back to overview"} className="h-11 w-11 px-0"><ChevronRight className="h-4 w-4" aria-hidden /></ButtonLink>
+        </nav>
 
         <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-5">
           <Tabs
@@ -150,16 +160,6 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
         </nav>
       </div>
 
-      {/* Mobile / tablet action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-3 py-2.5 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-4xl items-center gap-2">
-          <ButtonLink href={prev ? `${base}/lesson/${prev.id}` : base} variant="outline" size="sm" aria-label="Previous lesson" className="w-10 px-0"><ChevronLeft className="h-4 w-4" /></ButtonLink>
-          <div className="flex-1">
-            {enrolled ? <CompleteButton slug={slug} lessonId={lesson.id} done={done} nextHref={next ? `${base}/lesson/${next.id}` : undefined} compact className="[&>button]:w-full" /> : <ButtonLink href={`/courses/${slug}`} size="sm" className="w-full">Enroll</ButtonLink>}
-          </div>
-          <ButtonLink href={next ? `${base}/lesson/${next.id}` : base} variant="outline" size="sm" aria-label="Next lesson" className="w-10 px-0"><ChevronRight className="h-4 w-4" /></ButtonLink>
-        </div>
-      </div>
     </div>
   );
 }

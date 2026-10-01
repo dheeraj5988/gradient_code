@@ -1,5 +1,5 @@
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { X } from "lucide-react";
@@ -11,6 +11,7 @@ import { CourseSidebar, type SidebarModule } from "@/components/learn/course-sid
 import { getLearningContext, getPractice } from "@/lib/data/learning";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export default async function LearnLayout({ children, params }: { children: React.ReactNode; params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -31,28 +32,28 @@ export default async function LearnLayout({ children, params }: { children: Reac
   const sidebar = <CourseSidebar slug={slug} modules={modules} enrolled={enrolled} practiceCount={practice?.stats.total ?? 0} interviewCount={interview?.stats.total ?? 0} />;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-background">
-        <div className="flex h-14 items-center gap-3 px-4">
+    <div className="gc-public flex min-h-dvh flex-col bg-background">
+      <header className="glass safe-inline sticky top-0 z-30 border-b border-border pt-[env(safe-area-inset-top)]">
+        <div className="flex h-14 items-center gap-2 sm:gap-3">
           <Logo className="hidden md:inline-flex" />
           <span className="hidden h-5 w-px bg-border md:block" aria-hidden />
           <CourseNavDrawer label={ctx.course.title}>{sidebar}</CourseNavDrawer>
           <Link href={`/learn/${slug}`} className="min-w-0 flex-1 truncate text-sm font-semibold hover:text-primary">{ctx.course.title}</Link>
           {enrolled ? (
-            <div className="hidden w-48 items-center gap-2.5 sm:flex" title={`${ctx.progress.completed} of ${ctx.progress.total} lessons complete`}>
+            <div className="hidden w-32 shrink-0 items-center gap-2.5 sm:flex xl:w-48" title={`${ctx.progress.completed} of ${ctx.progress.total} lessons complete`}>
               <ProgressBar value={ctx.progress.percent} size="sm" className="flex-1" label="Course progress" />
               <span className="text-xs font-medium tabular-nums text-muted-foreground">{ctx.progress.percent}%</span>
             </div>
           ) : (
-            <ButtonLink href={`/courses/${slug}`} size="sm">Enroll</ButtonLink>
+            <ButtonLink href={`/courses/${slug}`} size="sm" className="shrink-0">Enroll</ButtonLink>
           )}
           <ThemeToggle />
-          <Link href="/dashboard" aria-label="Back to dashboard" className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"><X className="h-4 w-4" /></Link>
+          <Link href="/dashboard" aria-label="Back to dashboard" className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"><X className="h-4 w-4" aria-hidden /></Link>
         </div>
       </header>
-      <div className="grid flex-1 lg:grid-cols-[300px_1fr]">
+      <div className="grid flex-1 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="hidden border-r border-border bg-background lg:block">
-          <div className="sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">{sidebar}</div>
+          <div className="sticky top-[var(--gc-learn-header)] h-[calc(100dvh-var(--gc-learn-header))] overflow-y-auto overscroll-contain">{sidebar}</div>
         </aside>
         <div id="main" className="min-w-0 bg-surface">{children}</div>
       </div>

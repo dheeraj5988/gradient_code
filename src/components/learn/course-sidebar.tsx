@@ -16,7 +16,7 @@ type Props = { slug: string; modules: SidebarModule[]; enrolled: boolean; practi
 
 function NavLink({ href, icon: Icon, label, active, meta }: { href: string; icon: typeof BookOpen; label: string; active: boolean; meta?: string }) {
   return (
-    <Link href={href} aria-current={active ? "page" : undefined} className={cn("flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm", active ? "bg-primary-soft font-medium text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground")}>
+    <Link href={href} aria-current={active ? "page" : undefined} className={cn("flex min-h-11 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm lg:min-h-9", active ? "bg-primary-soft font-medium text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground")}>
       <Icon className="h-4 w-4 shrink-0" aria-hidden />
       <span className="flex-1 truncate">{label}</span>
       {meta ? <span className="text-xs tabular-nums text-subtle-foreground">{meta}</span> : null}
@@ -48,10 +48,10 @@ export function CourseSidebar({ slug, modules, enrolled, practiceCount, intervie
             const open = m.lessons.some((l) => l.id === currentLesson);
             return (
               <details key={m.id} open={open || undefined} className="group rounded-md">
-                <summary className="flex cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-surface-2">
+                <summary className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-surface-2">
                   <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 -rotate-90 text-subtle-foreground transition-transform group-open:rotate-0" aria-hidden />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-foreground">{m.title}</span>
+                    <span className="block text-sm font-medium break-words text-foreground">{m.title}</span>
                     <span className="text-xs text-subtle-foreground">Module {i + 1}{enrolled ? ` · ${m.completed}/${m.total}` : ` · ${m.total} lessons`}</span>
                   </span>
                   {enrolled && m.total && m.completed === m.total ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-label="Module complete" /> : null}
@@ -64,10 +64,10 @@ export function CourseSidebar({ slug, modules, enrolled, practiceCount, intervie
                     const State = l.done ? CheckCircle2 : locked ? Lock : Circle;
                     return (
                       <li key={l.id}>
-                        <Link href={`${base}/lesson/${l.id}`} aria-current={current ? "page" : undefined} className={cn("flex items-start gap-2 rounded-md px-2 py-1.5 text-[13px]", current ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground")}>
+                        <Link href={`${base}/lesson/${l.id}`} aria-current={current ? "page" : undefined} className={cn("flex min-h-11 items-start gap-2 rounded-md px-2 py-2 text-[13px] lg:min-h-0 lg:py-1.5", current ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground")}>
                           <State className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", l.done ? "text-success" : "text-subtle-foreground")} aria-label={l.done ? "Completed" : locked ? "Locked" : "Not completed"} />
                           <span className="min-w-0 flex-1">
-                            <span className={cn("block", current && "font-medium")}>{l.title}</span>
+                            <span className={cn("block break-words", current && "font-medium")}>{l.title}</span>
                             <span className="flex items-center gap-1 text-[11px] text-subtle-foreground">
                               <Type className="h-3 w-3" aria-hidden />
                               {l.duration_seconds ? formatDuration(l.duration_seconds) : l.type}
