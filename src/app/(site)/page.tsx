@@ -28,18 +28,18 @@ export default async function HomePage() {
   return (
     <>
       {/* 1. HERO */}
-      <section className="border-b border-border bg-surface">
-        <div className="container-page grid gap-12 py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:py-24">
+      <section className="hero-tint border-b border-border bg-surface">
+        <div className="container-page grid gap-8 py-10 sm:gap-10 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12 lg:py-24">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[56px] lg:leading-[1.08]">
+            <h1 className="text-[32px] leading-[1.12] font-bold tracking-tight text-balance sm:text-5xl lg:text-[56px] lg:leading-[1.08]">
               Learn practical skills. Build real projects. Get certified.
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-muted-foreground">
+            <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
               Industry-oriented courses and programs that help you develop practical technical skills — and demonstrate them through projects and assessments.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/courses" size="lg">Explore courses</ButtonLink>
-              <ButtonLink href="/programs" size="lg" variant="outline">Explore programs</ButtonLink>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href="/courses" size="lg" className="w-full sm:w-auto">Explore courses</ButtonLink>
+              <ButtonLink href="/programs" size="lg" variant="outline" className="w-full sm:w-auto">Explore programs</ButtonLink>
             </div>
           </div>
 
@@ -126,7 +126,7 @@ export default async function HomePage() {
             description="Start with our most complete, project-based courses."
             action={<Link href="/courses" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">View all courses <ArrowRight className="h-4 w-4" aria-hidden /></Link>}
           />
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {courses.slice(0, 4).map((c, i) => <CourseCard key={c.id} course={c} priority={i < 2} />)}
           </div>
         </section>

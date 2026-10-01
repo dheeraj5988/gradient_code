@@ -18,7 +18,9 @@ Gradient Code is an Indian EdTech platform. It sells video courses (Hinglish, ho
 - Light and dark themes via semantic tokens in `src/app/globals.css` only (`bg-background`, `bg-surface`, `text-muted-foreground`, `border-border`, `bg-primary`…). No hex colours in components. Exceptions: OG image, theme-color meta, print CSS.
 - Inter everywhere. Use `font-mono` only for real code UI.
 - `rounded-lg` for controls, `rounded-xl` for cards, `rounded-full` only for pills/avatars.
-- Use `shadow-sm` / `shadow-card` only. No gradients, glow, blobs, gradient text or decorative animation.
+- Use `shadow-sm` / `shadow-card` only. No glow, blobs, gradient text or decorative/looping animation.
+- **Public/learner pages only** (wrapped in `.gc-public`): restrained glass via the `glass` / `glass-strong` utilities on structural bars and sheets (header, drawers, buy bar), one static `hero-tint`, `shadow-elevated` for sheets, 44px touch targets and 16px inputs (applied by scoped CSS). Cards, forms, prose and video stay opaque. Admin never uses `.gc-public`.
+- Mobile overlays use `src/components/ui/mobile-sheet.tsx` (native `<dialog>`); never hand-roll a modal `<div>`.
 - Reuse `src/components/ui`: Button, Badge, Input, Skeleton, EmptyState, ErrorState, ProgressBar, ProgressRing, Breadcrumbs, Tabs, Accordion.
 - Every data screen has loading, empty and error states.
 - Never fabricate numbers, ratings, testimonials, logos, salaries or outcomes. If real data is missing, hide the section.
