@@ -82,9 +82,11 @@ export async function getPaymentStatus(creds: Creds, txnId: string): Promise<Sta
       signal: AbortSignal.timeout(15_000),
       cache: "no-store",
     });
-    if (!res.ok) return { known: false, status: null, amount: null };
     const d = (await res.json().catch(() => null)) as { status?: string; amount?: string | number; data?: { status?: string; amount?: string | number } } | null;
     const status = d?.status ?? d?.data?.status;
+    // Safe diagnostic: HTTP code, reply field names and the status word (no keys, no amounts).
+    console.info(`[paypur] status http=${res.status} fields=${d ? Object.keys(d).sort().join(",") : "non-json"}${d?.data && typeof d.data === "object" ? ` data.fields=${Object.keys(d.data).sort().join(",")}` : ""} status=${typeof status === "string" ? status.slice(0, 20) : "none"}`);
+    if (!res.ok) return { known: false, status: null, amount: null };
     const amt = d?.amount ?? d?.data?.amount;
     if (typeof status !== "string") return { known: false, status: null, amount: null };
     const n = amt == null ? null : Number(amt);
