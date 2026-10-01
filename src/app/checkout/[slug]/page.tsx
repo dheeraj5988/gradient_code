@@ -32,17 +32,17 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
     ? ((await (await createClient()).rpc("has_role", { _user_id: user.id, _role: "admin" })).data === true ? cfg.problem : null)
     : null;
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="border-b border-border bg-background">
+    <div className="min-h-dvh bg-surface">
+      <header className="border-b border-border bg-background pt-[env(safe-area-inset-top)]">
         <div className="container-page flex h-16 items-center justify-between">
           <Logo />
-          <div className="flex items-center gap-3"><ThemeToggle /><span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Lock className="h-3.5 w-3.5" aria-hidden />Secure checkout</span></div>
+          <div className="flex items-center gap-3"><ThemeToggle /><span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><Lock className="h-3.5 w-3.5" aria-hidden /><span className="sr-only sm:not-sr-only">Secure checkout</span></span></div>
         </div>
       </header>
       <main id="main" className="container-page py-8 sm:py-10">
         <Breadcrumbs items={[{ label: "Courses", href: "/courses" }, { label: course.title, href: `/courses/${course.slug}` }, { label: "Checkout" }]} />
         <h1 className="mt-4 text-2xl font-bold sm:text-3xl">Checkout</h1>
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
             <section className="rounded-xl border border-border bg-card p-5">
               <h2 className="mb-4 text-sm font-semibold">Order details</h2>
@@ -63,9 +63,9 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
             <div className="space-y-4 rounded-xl border border-border bg-card p-5 lg:sticky lg:top-6">
               <h2 className="text-sm font-semibold">Order summary</h2>
               <dl className="space-y-2.5 text-sm">
-                {off ? <div className="flex justify-between text-muted-foreground"><dt>Original price</dt><dd className="tabular-nums line-through">{formatPrice(course.mrp!)}</dd></div> : null}
-                {off ? <div className="flex justify-between text-success"><dt>Discount ({off}%)</dt><dd className="tabular-nums">−{formatPrice(course.mrp! - course.price)}</dd></div> : null}
-                <div className="flex justify-between border-t border-border pt-3 text-base font-bold"><dt>Total</dt><dd className="tabular-nums">{formatPrice(charge)}</dd></div>
+                {off ? <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-muted-foreground"><dt>Original price</dt><dd className="tabular-nums line-through">{formatPrice(course.mrp!)}</dd></div> : null}
+                {off ? <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-success"><dt>Discount ({off}%)</dt><dd className="tabular-nums">−{formatPrice(course.mrp! - course.price)}</dd></div> : null}
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 border-t border-border pt-3 text-base font-bold"><dt>Total</dt><dd className="tabular-nums">{formatPrice(charge)}</dd></div>
                 {testing ? <p className="text-xs text-muted-foreground">Test pricing is on: listed price {formatPrice(course.price)}, charged {formatPrice(charge)}.</p> : null}
               </dl>
               {error ? <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p> : null}

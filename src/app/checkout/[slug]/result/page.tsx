@@ -41,10 +41,10 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
   }[state];
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="border-b border-border bg-background"><div className="container-page flex h-16 items-center justify-between"><Logo /><ThemeToggle /></div></header>
+    <div className="min-h-dvh bg-surface">
+      <header className="border-b border-border bg-background pt-[env(safe-area-inset-top)]"><div className="container-page flex h-16 items-center justify-between"><Logo /><ThemeToggle /></div></header>
       <main id="main" className="container-page py-12">
-        <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+        <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-5 text-center shadow-sm break-words sm:p-6">
           <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${tone}`}><Icon className="h-6 w-6" aria-hidden /></span>
           <h1 className="mt-4 text-xl font-bold">{title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{text}</p>

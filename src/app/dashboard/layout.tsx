@@ -1,27 +1,33 @@
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { LogOut } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { DashboardMobileNav } from "@/components/dashboard/dashboard-mobile-nav";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
   const name = (user?.user_metadata?.full_name as string) || user?.email || "Demo learner";
   const initials = name.split(/[\s@]/).map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[248px_1fr]">
-      <aside className="border-b border-border bg-background lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0">
-        <div className="flex h-16 items-center justify-between px-5">
-          <Logo />
-          <div className="flex items-center gap-2 lg:hidden">
+    <div className="gc-public min-h-dvh bg-surface lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
+      {/* Phones/tablets: compact glass header; every destination + sign out live in the menu sheet. */}
+      <header className="glass safe-inline border-b border-border pt-[env(safe-area-inset-top)] lg:hidden">
+        <div className="flex h-16 items-center gap-2">
+          <span className="flex min-w-0 shrink items-center"><Logo /></span>
+          <span className="ml-auto flex min-w-0 items-center gap-2">
             <ThemeToggle />
-            <form action="/auth/signout" method="post">
-              <button className="text-xs font-medium text-muted-foreground hover:text-foreground">Sign out</button>
-            </form>
-          </div>
+            <DashboardMobileNav name={name} />
+          </span>
+        </div>
+      </header>
+      <aside className="hidden border-border bg-background lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r">
+        <div className="flex h-16 items-center px-5">
+          <Logo />
         </div>
         <SidebarNav />
         <div className="mt-auto hidden border-t border-border p-4 lg:block">

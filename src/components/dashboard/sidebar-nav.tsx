@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { Award, BookOpen, Briefcase, Compass, LayoutDashboard, Share2, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+export const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/courses", label: "My courses", icon: BookOpen },
   { href: "/dashboard/certificates", label: "Certificates", icon: Award },
@@ -18,7 +18,7 @@ export function SidebarNav() {
   const path = usePathname();
   return (
     <nav aria-label="Dashboard">
-      <ul className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:px-3 lg:pb-0">
+      <ul className="flex flex-col gap-1 px-3">
         {NAV.map((n) => {
           const active = n.href === "/dashboard" ? path === n.href : path.startsWith(n.href);
           return (
@@ -27,7 +27,7 @@ export function SidebarNav() {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors lg:min-h-9",
                   active ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                 )}
               >
