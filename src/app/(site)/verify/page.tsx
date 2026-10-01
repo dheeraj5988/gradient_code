@@ -19,9 +19,9 @@ export default async function VerifyPage({ searchParams }: { searchParams: Promi
         <p className="mt-2 text-sm text-muted-foreground">Enter the credential ID printed on the certificate, for example GC-2026-ABC-K7M2XQ4P.</p>
         <form className="mt-6" action="/verify" method="get">
           <Label htmlFor="cid">Credential ID</Label>
-          <div className="flex gap-2">
-            <input id="cid" name="id" required placeholder="GC-2026-XXX-XXXXXXXX" className="h-10 flex-1 rounded-lg border border-input bg-background px-3 font-mono text-sm uppercase focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            <button className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover">Verify</button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input id="cid" name="id" required placeholder="GC-2026-XXX-XXXXXXXX" className="h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 font-sans text-base tabular-nums uppercase sm:flex-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <button className="min-h-11 w-full rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover sm:w-auto">Verify</button>
           </div>
         </form>
       </div>

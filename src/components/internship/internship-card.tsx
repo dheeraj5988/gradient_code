@@ -10,10 +10,10 @@ export function stipendText(i: Internship) {
 
 export function InternshipCard({ i }: { i: Internship }) {
   return (
-    <article className="relative rounded-xl border border-border bg-card p-5 transition-[box-shadow,transform] duration-200 hover:shadow-card motion-safe:hover:-translate-y-0.5 sm:p-6">
+    <article className="relative rounded-xl border border-border bg-card p-5 transition-[box-shadow,transform] duration-200 hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold sm:text-lg">
+          <h2 className="text-base font-semibold break-words sm:text-lg">
             <Link href={`/internships/${i.slug}`} className="after:absolute after:inset-0 hover:text-primary">{i.title}</Link>
           </h2>
           <p className="text-sm text-muted-foreground">{i.company}</p>

@@ -16,9 +16,9 @@ export default async function Page() {
       <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Contact</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">Questions about a course, payment or internship? Reach us here.</p>
       <ul className="mt-8 max-w-xl space-y-4 rounded-xl border border-border bg-card p-5 text-sm">
-        {s.support_email ? <li className="flex items-center gap-3"><Mail className="h-4 w-4 text-muted-foreground" aria-hidden /><a className="text-primary underline" href={`mailto:${s.support_email}`}>{s.support_email}</a></li> : null}
-        {s.support_phone ? <li className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" aria-hidden />{s.support_phone}</li> : null}
-        {s.address ? <li className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden /><span className="whitespace-pre-line">{s.address}</span></li> : null}
+        {s.support_email ? <li className="flex items-center gap-3"><Mail className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /><a className="inline-flex min-h-11 min-w-0 items-center text-primary underline [overflow-wrap:anywhere]" href={`mailto:${s.support_email}`}>{s.support_email}</a></li> : null}
+        {s.support_phone ? <li className="flex items-center gap-3"><Phone className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />{s.support_phone}</li> : null}
+        {s.address ? <li className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /><span className="min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">{s.address}</span></li> : null}
       </ul>
     </div>
   );

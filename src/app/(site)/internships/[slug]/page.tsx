@@ -34,13 +34,13 @@ export default async function InternshipDetail({ params }: { params: Params }) {
   return (
     <div className="container-page py-8 sm:py-10">
       <Breadcrumbs items={[{ label: "Internships", href: "/internships" }, { label: i.title }]} />
-      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_320px]">
+      <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-8">
           <div>
             <h1 className="text-3xl font-bold">{i.title}</h1>
             <p className="mt-1 text-muted-foreground">{i.company} · {i.mode}</p>
           </div>
-          <dl className="grid grid-cols-2 gap-4 rounded-xl border border-border p-5 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-4 rounded-xl border border-border p-5 xl:grid-cols-4 [&_dd]:min-w-0 [&_dd]:break-words">
             {facts.map((f) => (
               <div key={f.label}>
                 <dt className="flex items-center gap-1.5 text-xs text-subtle-foreground"><f.icon className="h-3.5 w-3.5" aria-hidden />{f.label}</dt>
@@ -61,7 +61,7 @@ export default async function InternshipDetail({ params }: { params: Params }) {
             </ol>
           </section>
         </div>
-        <aside>
+        <aside className="order-first lg:order-last">
           <div className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card lg:sticky lg:top-20">
             <h2 className="font-semibold">Eligibility</h2>
             {i.required_course_slug ? (

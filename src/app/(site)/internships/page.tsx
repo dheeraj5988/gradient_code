@@ -24,13 +24,13 @@ export default async function InternshipsPage({ searchParams }: { searchParams: 
       <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Internships</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">Gain real-world experience. Some internships are linked to a course — complete it to become eligible.</p>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[240px_1fr]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside aria-label="Filters" className="space-y-6">
           <form role="search">
             <label htmlFor="iq" className="mb-2 block text-sm font-semibold">Search</label>
             <div className="relative">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-subtle-foreground" aria-hidden />
-              <input id="iq" name="q" defaultValue={sp.q} placeholder="Role or skill" className="h-10 w-full rounded-lg border border-input bg-background pr-3 pl-9 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <input id="iq" name="q" defaultValue={sp.q} placeholder="Role or skill" className="h-11 w-full rounded-lg border border-input bg-background pr-3 pl-9 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             {sp.mode ? <input type="hidden" name="mode" value={sp.mode} /> : null}
           </form>
@@ -44,7 +44,7 @@ export default async function InternshipsPage({ searchParams }: { searchParams: 
                 if (!active) p.set("mode", m);
                 return (
                   <li key={m}>
-                    <Link href={`/internships${p.size ? `?${p}` : ""}`} aria-current={active ? "true" : undefined} className={cn("block rounded-md border px-3 py-1.5 text-sm lg:border-transparent lg:px-2", active ? "border-primary bg-primary-soft font-medium text-primary" : "border-border text-muted-foreground hover:text-foreground")}>
+                    <Link href={`/internships${p.size ? `?${p}` : ""}`} aria-current={active ? "true" : undefined} className={cn("flex min-h-11 items-center rounded-md border px-3 text-sm lg:min-h-9 lg:border-transparent lg:px-2", active ? "border-primary bg-primary-soft font-medium text-primary" : "border-border text-muted-foreground hover:text-foreground")}>
                       {m}
                     </Link>
                   </li>

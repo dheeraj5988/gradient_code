@@ -13,7 +13,7 @@ export async function LegalPage({ slug, fallbackTitle }: { slug: string; fallbac
   return (
     <div className="container-page py-8 sm:py-10">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: page.title }]} />
-      <article className="mt-4 max-w-3xl">
+      <article className="mt-4 max-w-3xl min-w-0 [overflow-wrap:anywhere]">
         <h1 className="text-3xl font-bold sm:text-4xl">{page.title}</h1>
         <p className="mt-2 text-sm text-subtle-foreground">Last updated {new Date(page.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
         {!page.reviewed ? (
