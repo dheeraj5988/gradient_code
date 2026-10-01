@@ -9,7 +9,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Input, Label } from "@/components/ui/input";
 import { CourseThumb } from "@/components/course-thumb";
 import { getCourseBySlug } from "@/lib/data/queries";
-import { getUser } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { IS_DEMO } from "@/lib/supabase/env";
 import { chargeAmount, loadPaymentConfig } from "@/lib/payments/config";
 import { discountPercent, formatPrice } from "@/lib/utils";
@@ -27,6 +27,10 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
   const charge = cfg ? chargeAmount(cfg, course.price) : course.price;
   const testing = !!cfg && cfg.testMode && course.price > 0;
   const user = IS_DEMO ? null : await getUser();
+  // Admins see the exact reason payments are off; buyers see a neutral message.
+  const adminProblem = !canPay && user && cfg?.problem
+    ? ((await (await createClient()).rpc("has_role", { _user_id: user.id, _role: "admin" })).data === true ? cfg.problem : null)
+    : null;
   return (
     <div className="min-h-screen bg-surface">
       <header className="border-b border-border bg-background">
@@ -71,6 +75,7 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
                 <>
                   <Button size="lg" className="w-full" disabled>Payments unavailable</Button>
                   <p className="text-center text-xs text-muted-foreground">Online payment isn&apos;t switched on yet. Please check back soon.</p>
+                  {adminProblem ? <p role="alert" className="rounded-lg bg-warning-soft px-3 py-2 text-xs text-warning">Admin: {adminProblem} <Link href="/admin/payments" className="underline">Open Payments</Link></p> : null}
                 </>
               ) : !user ? (
                 <ButtonLink size="lg" className="w-full" href={`/login?next=/checkout/${course.slug}`}>Sign in to pay</ButtonLink>

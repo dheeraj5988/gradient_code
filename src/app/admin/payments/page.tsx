@@ -1,9 +1,10 @@
 import { CheckCircle2, CircleAlert, ShieldCheck } from "lucide-react";
-import { headers } from "next/headers";
 import { AdminHeader } from "@/components/admin/table";
 import { ActionButton, AdminForm, Checkbox, SubmitButton, TextInput } from "@/components/admin/form";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { loadPaymentConfig } from "@/lib/payments/config";
+import { requestOrigin } from "@/lib/payments/origin";
+import { serviceKeyName } from "@/lib/supabase/service";
 import { formatPrice } from "@/lib/utils";
 import { clearGatewayCredentials, savePaymentSettings, testGateway } from "./actions";
 
@@ -18,9 +19,9 @@ function Check({ ok, children }: { ok: boolean; children: React.ReactNode }) {
 export default async function PaymentsAdmin() {
   await requireAdminPage();
   const cfg = await loadPaymentConfig();
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "your-domain";
-  const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || `${h.get("x-forwarded-proto") ?? "https"}://${host}`;
+  const origin = await requestOrigin();
+  const keyName = serviceKeyName();
+  const siteEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? null;
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <AdminHeader title="Payments" description="Paypur UPI gateway. Students pay on the checkout page; access is granted only after the gateway's signed confirmation is verified on the server." />
@@ -28,7 +29,8 @@ export default async function PaymentsAdmin() {
       <section className="rounded-xl border border-border bg-card p-5">
         <h2 className="mb-3 text-sm font-semibold">Status</h2>
         <ul className="space-y-2">
-          <Check ok={cfg.serviceReady}>Server secret <code className="text-xs">SUPABASE_SERVICE_ROLE_KEY</code> {cfg.serviceReady ? "is set" : "is missing — add it in Vercel → Environment Variables, then redeploy"}</Check>
+          <Check ok={cfg.serviceReady}>Server key {keyName ? <><code className="text-xs">{keyName}</code> is set</> : <>missing — add <code className="text-xs">SUPABASE_SERVICE_ROLE_KEY</code> in Vercel → Environment Variables, then redeploy</>}</Check>
+          <Check ok={!siteEnv || siteEnv === origin}>Site URL {siteEnv === origin || !siteEnv ? "matches this domain" : <>env <code className="text-xs">NEXT_PUBLIC_SITE_URL</code> is <code className="text-xs">{siteEnv}</code> but you are on <code className="text-xs">{origin}</code> — set it to your public domain (payments already use the domain the buyer is on)</>}</Check>
           <Check ok={cfg.hasCredentials}>Gateway credentials {cfg.hasCredentials ? `saved${cfg.keyHint ? ` (key ends …${cfg.keyHint})` : ""}${cfg.credentialSource === "env" ? " via environment variables" : ""}` : "not added yet"}</Check>
           <Check ok={cfg.enabled}>Payments are {cfg.enabled ? "ON" : "OFF"}</Check>
           <Check ok={!cfg.testMode}>{cfg.testMode ? `Test mode ON — every paid course is charged ${formatPrice(cfg.testAmount)}` : "Live prices are being charged"}</Check>

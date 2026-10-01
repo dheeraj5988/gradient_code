@@ -7,6 +7,7 @@ import { createServiceClient, serviceConfigured } from "@/lib/supabase/service";
 import { encryptSecret } from "@/lib/payments/crypto";
 import { loadPaymentConfig } from "@/lib/payments/config";
 import { PAYPUR_BASE } from "@/lib/payments/paypur";
+import { requestOrigin } from "@/lib/payments/origin";
 
 /** Saves gateway settings. Key/salt are write-only: blank keeps the stored value. Secrets are never audited or echoed. */
 export async function savePaymentSettings(_prev: unknown, form: FormData): Promise<ActionResult> {
@@ -79,13 +80,27 @@ export async function testGateway(_prev: unknown, _form: FormData): Promise<Acti
   if ("denied" in g) return g.denied;
   const cfg = await loadPaymentConfig();
   if (!cfg.creds) return { ok: false, error: cfg.problem ?? "No credentials saved." };
+  let gatewayMsg: string;
   try {
     const res = await fetch(`${PAYPUR_BASE}/api/merchant/status?txn_id=connection_test`, { headers: { "X-PAYPUR-KEY": cfg.creds.key }, signal: AbortSignal.timeout(10_000), cache: "no-store" });
-    if (res.status === 401 || res.status === 403) return { ok: false, error: `The gateway rejected the Gateway Key (HTTP ${res.status}). Re-check it in the Paypur dashboard.` };
-    return { ok: true, data: null, message: `Gateway reachable (HTTP ${res.status}); key was not rejected. The salt is only proven by a real ₹1 test purchase.` };
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    if (res.status === 401 || res.status === 403 || /key/i.test(body?.error ?? "")) return { ok: false, error: `The gateway rejected the Gateway Key (HTTP ${res.status}${body?.error ? `: ${body.error}` : ""}). Re-check it in the Paypur dashboard.` };
+    gatewayMsg = `Gateway reachable (HTTP ${res.status}); key accepted.`;
   } catch {
     return { ok: false, error: "Couldn't reach the gateway from the server." };
   }
+  // The buyer's browser must be able to reach our callback without being logged in to anything.
+  const callback = `${await requestOrigin()}/api/paypur/callback`;
+  try {
+    const r = await fetch(callback, { redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(10_000) });
+    const loc = r.headers.get("location") ?? "";
+    if (r.status === 401 || /vercel\.com\/(sso|login)/.test(loc)) {
+      return { ok: false, error: `${gatewayMsg} BUT the return URL ${callback} is blocked by Vercel Deployment Protection — buyers would hit a Vercel login after paying. Use your public production domain, or turn protection off for Production (Vercel → Settings → Deployment Protection).` };
+    }
+  } catch {
+    return { ok: false, error: `${gatewayMsg} BUT the return URL ${callback} couldn't be reached from the server.` };
+  }
+  return { ok: true, data: null, message: `${gatewayMsg} Return URL ${callback} is publicly reachable. The salt is only proven by a real test purchase.` };
 }
 
 /** Refund bookkeeping only — money is returned from the Paypur dashboard. Removes payment access & cancels unpaid commission. */

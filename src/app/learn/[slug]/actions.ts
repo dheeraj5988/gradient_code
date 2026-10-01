@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { IS_DEMO } from "@/lib/supabase/env";
 import { DEMO_KEYS, DEMO_QUESTIONS, demoStore } from "@/lib/data/demo-learning";
-import type { GradeResult } from "@/lib/data/learning-types";
+import type { GradeResult, Note } from "@/lib/data/learning-types";
 
 type Result<T = null> = { ok: true; data: T } | { ok: false; error: string };
 const fail = (error: string) => ({ ok: false as const, error });
@@ -94,7 +94,7 @@ export async function submitAnswer(slug: string, questionId: string, answer: Sub
     const row = (data as GradeResult[])[0];
     result = { ...row, correct_options: row.correct_options ?? [], accepted_answers: row.accepted_answers ?? [] };
   }
-  revalidatePath(`/learn/${slug}/practice`, "layout");
+  // No revalidatePath: the question card shows the result itself; other pages are dynamic and refetch on navigation.
   return { ok: true, data: result };
 }
 
@@ -112,8 +112,7 @@ export async function toggleSavedQuestion(slug: string, questionId: string, curr
       : await supabase.from("saved_questions").upsert({ user_id: uid, question_id: questionId }, { onConflict: "user_id,question_id", ignoreDuplicates: true });
     if (error) return fail("Couldn't update saved questions.");
   }
-  revalidatePath(`/learn/${slug}/practice`, "layout");
-  return { ok: true, data: null };
+  return { ok: true, data: null }; // optimistic UI already updated; no page refetch
 }
 
 export async function setReviewStatus(slug: string, questionId: string, status: "not_reviewed" | "reviewed" | "confident"): Promise<Result> {
@@ -126,29 +125,29 @@ export async function setReviewStatus(slug: string, questionId: string, status: 
     const { error } = await supabase.from("question_reviews").upsert({ user_id: uid, question_id: questionId, status, updated_at: new Date().toISOString() }, { onConflict: "user_id,question_id" });
     if (error) return fail("Couldn't save.");
   }
-  revalidatePath(`/learn/${slug}/interview`);
-  return { ok: true, data: null };
+  return { ok: true, data: null }; // optimistic UI already updated; no page refetch
 }
 
 /* ----------------------------------- Notes ----------------------------------- */
 
-export async function createNote(slug: string, courseId: string, lessonId: string | null, content: string, timestamp: number | null): Promise<Result> {
+export async function createNote(slug: string, courseId: string, lessonId: string | null, content: string, timestamp: number | null): Promise<Result<Note>> {
   const text = content.trim();
   if (!text || text.length > 10000) return fail("Notes must be between 1 and 10,000 characters.");
   if (!ID.test(courseId) || (lessonId && !ID.test(lessonId))) return fail("Invalid input.");
   const uid = await requireUser();
   if (!uid) return fail("Please log in.");
   const ts = timestamp != null && timestamp >= 0 ? Math.floor(timestamp) : null;
+  // The notes list updates on the client from the returned row — no page refetch.
   if (IS_DEMO) {
     const now = new Date().toISOString();
-    demoStore.notes.push({ id: crypto.randomUUID(), course_id: courseId, lesson_id: lessonId, content: text, video_timestamp_seconds: ts, created_at: now, updated_at: now });
-  } else {
-    const supabase = await createClient();
-    const { error } = await supabase.from("learner_notes").insert({ user_id: uid, course_id: courseId, lesson_id: lessonId, content: text, video_timestamp_seconds: ts });
-    if (error) return fail("Couldn't save your note.");
+    const note: Note = { id: crypto.randomUUID(), course_id: courseId, lesson_id: lessonId, content: text, video_timestamp_seconds: ts, created_at: now, updated_at: now };
+    demoStore.notes.push(note);
+    return { ok: true, data: note };
   }
-  revalidatePath(`/learn/${slug}`, "layout");
-  return { ok: true, data: null };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("learner_notes").insert({ user_id: uid, course_id: courseId, lesson_id: lessonId, content: text, video_timestamp_seconds: ts }).select("id,course_id,lesson_id,content,video_timestamp_seconds,created_at,updated_at").single();
+  if (error || !data) return fail("Couldn't save your note.");
+  return { ok: true, data: data as Note };
 }
 
 export async function updateNote(slug: string, noteId: string, content: string): Promise<Result> {
@@ -164,7 +163,6 @@ export async function updateNote(slug: string, noteId: string, content: string):
     const { error } = await supabase.from("learner_notes").update({ content: text }).eq("id", noteId).eq("user_id", uid);
     if (error) return fail("Couldn't update your note.");
   }
-  revalidatePath(`/learn/${slug}`, "layout");
   return { ok: true, data: null };
 }
 
@@ -178,7 +176,6 @@ export async function deleteNote(slug: string, noteId: string): Promise<Result> 
     const { error } = await supabase.from("learner_notes").delete().eq("id", noteId).eq("user_id", uid);
     if (error) return fail("Couldn't delete your note.");
   }
-  revalidatePath(`/learn/${slug}`, "layout");
   return { ok: true, data: null };
 }
 

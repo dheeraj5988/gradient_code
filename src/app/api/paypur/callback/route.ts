@@ -3,6 +3,7 @@ import { createServiceClient, serviceConfigured } from "@/lib/supabase/service";
 import { loadPaymentConfig } from "@/lib/payments/config";
 import { confirmOrder } from "@/lib/payments/order";
 import { safeEqualHex, signCallback } from "@/lib/payments/paypur";
+import { originFrom } from "@/lib/payments/origin";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ export const dynamic = "force-dynamic";
  *  3. finalize_paid_order() checks the amount against OUR order and is idempotent.
  */
 export async function GET(req: NextRequest) {
-  const origin = process.env.NEXT_PUBLIC_SITE_URL && !/localhost/.test(process.env.NEXT_PUBLIC_SITE_URL) ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "") : req.nextUrl.origin;
+  // Send the buyer back to the domain Paypur returned them to (never a protected preview domain from env).
+  const origin = originFrom(req.headers.get("x-forwarded-host") ?? req.headers.get("host"), req.headers.get("x-forwarded-proto")) ?? req.nextUrl.origin;
   const go = (path: string) => NextResponse.redirect(`${origin}${path}`, { status: 303, headers: { "Cache-Control": "no-store" } });
   const q = req.nextUrl.searchParams;
   const orderRef = q.get("order_id") ?? "";

@@ -7,7 +7,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { VideoPlayer } from "@/components/learn/video-player";
 import { CompleteButton } from "@/components/learn/complete-button";
-import { NewNoteForm, NoteItem } from "@/components/learn/notes-panel";
+import { NotesManager } from "@/components/learn/notes-panel";
 import { ResourceCard } from "@/components/resources/resource-card";
 import { getLearningContext, getLessonContent, getLessonExtras, getNotes, getResources, getVideoPosition, resourceHref } from "@/lib/data/learning";
 import { formatDuration } from "@/lib/utils";
@@ -129,8 +129,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                 label: `Notes${notes.length ? ` (${notes.length})` : ""}`,
                 content: enrolled ? (
                   <div className="space-y-4">
-                    <NewNoteForm slug={slug} courseId={ctx.course.id} lessonId={lesson.id} allowTimestamp={!!source} />
-                    {notes.length ? <ul className="space-y-3">{notes.map((n) => <NoteItem key={n.id} slug={slug} note={n} />)}</ul> : <p className="text-sm text-muted-foreground">No notes for this lesson yet.</p>}
+                    <NotesManager slug={slug} courseId={ctx.course.id} lessonId={lesson.id} allowTimestamp={!!source} initial={notes} emptyText="No notes for this lesson yet." />
                   </div>
                 ) : <p className="text-sm text-muted-foreground">Enroll to take notes.</p>,
               },

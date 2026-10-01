@@ -9,7 +9,7 @@ import { playerClock } from "./player-clock";
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const textareaClass = "w-full rounded-lg border border-input bg-background p-3 text-sm placeholder:text-subtle-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
-export function NoteItem({ slug, note, lessonTitle, lessonHref }: { slug: string; note: Note; lessonTitle?: string | null; lessonHref?: string | null }) {
+export function NoteItem({ slug, note, lessonTitle, lessonHref, onDeleted, onUpdated }: { slug: string; note: Note; lessonTitle?: string | null; lessonHref?: string | null; onDeleted?: (id: string) => void; onUpdated?: (n: Note) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(note.content);
   const [pending, start] = useTransition();
@@ -25,13 +25,13 @@ export function NoteItem({ slug, note, lessonTitle, lessonHref }: { slug: string
           <button
             aria-label="Delete note"
             disabled={pending}
-            onClick={() => { if (confirm("Delete this note? This can't be undone.")) start(async () => { const r = await deleteNote(slug, note.id); if (!r.ok) setError(r.error); }); }}
+            onClick={() => { if (confirm("Delete this note? This can't be undone.")) start(async () => { const r = await deleteNote(slug, note.id); if (!r.ok) setError(r.error); else onDeleted?.(note.id); }); }}
             className="grid h-7 w-7 place-items-center rounded-md text-danger hover:bg-danger-soft"
           ><Trash2 className="h-3.5 w-3.5" /></button>
         </span>
       </div>
       {editing ? (
-        <form onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await updateNote(slug, note.id, draft); if (r.ok) setEditing(false); else setError(r.error); }); }} className="space-y-2">
+        <form onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await updateNote(slug, note.id, draft); if (r.ok) { setEditing(false); onUpdated?.({ ...note, content: draft.trim(), updated_at: new Date().toISOString() }); } else setError(r.error); }); }} className="space-y-2">
           <label className="sr-only" htmlFor={`edit-${note.id}`}>Edit note</label>
           <textarea id={`edit-${note.id}`} value={draft} onChange={(e) => setDraft(e.target.value)} rows={4} maxLength={10000} className={textareaClass} />
           <div className="flex gap-2">
@@ -47,7 +47,7 @@ export function NoteItem({ slug, note, lessonTitle, lessonHref }: { slug: string
   );
 }
 
-export function NewNoteForm({ slug, courseId, lessonId, allowTimestamp }: { slug: string; courseId: string; lessonId: string | null; allowTimestamp?: boolean }) {
+export function NewNoteForm({ slug, courseId, lessonId, allowTimestamp, onCreated }: { slug: string; courseId: string; lessonId: string | null; allowTimestamp?: boolean; onCreated?: (n: Note) => void }) {
   const [text, setText] = useState("");
   const [withTime, setWithTime] = useState(true);
   const [pending, start] = useTransition();
@@ -59,7 +59,7 @@ export function NewNoteForm({ slug, courseId, lessonId, allowTimestamp }: { slug
         const ts = allowTimestamp && withTime ? playerClock.seconds : null;
         start(async () => {
           const r = await createNote(slug, courseId, lessonId, text, ts);
-          if (r.ok) { setText(""); setError(null); } else setError(r.error);
+          if (r.ok) { setText(""); setError(null); onCreated?.(r.data); } else setError(r.error);
         });
       }}
       className="space-y-2"
@@ -77,5 +77,37 @@ export function NewNoteForm({ slug, courseId, lessonId, allowTimestamp }: { slug
       </div>
       {error ? <p role="alert" className="text-xs text-danger">{error}</p> : null}
     </form>
+  );
+}
+
+/**
+ * Notes editor + list kept in client state: adding, editing or deleting a note updates the list
+ * in place instead of re-rendering the whole learning page.
+ */
+export function NotesManager({ slug, courseId, lessonId, allowTimestamp, initial, lessonTitles, emptyText, newLabel }: {
+  slug: string; courseId: string; lessonId: string | null; allowTimestamp?: boolean; initial: Note[];
+  lessonTitles?: Record<string, string>; emptyText: string; newLabel?: string;
+}) {
+  const [notes, setNotes] = useState(initial);
+  return (
+    <div className="space-y-4">
+      {newLabel ? <h3 className="text-sm font-semibold">{newLabel}</h3> : null}
+      <NewNoteForm slug={slug} courseId={courseId} lessonId={lessonId} allowTimestamp={allowTimestamp} onCreated={(n) => setNotes((l) => [n, ...l])} />
+      {notes.length ? (
+        <ul className="space-y-3">
+          {notes.map((n) => (
+            <NoteItem
+              key={n.id}
+              slug={slug}
+              note={n}
+              lessonTitle={lessonTitles && n.lesson_id ? lessonTitles[n.lesson_id] ?? null : null}
+              lessonHref={lessonTitles && n.lesson_id ? `/learn/${slug}/lesson/${n.lesson_id}` : null}
+              onDeleted={(id) => setNotes((l) => l.filter((x) => x.id !== id))}
+              onUpdated={(u) => setNotes((l) => l.map((x) => (x.id === u.id ? u : x)))}
+            />
+          ))}
+        </ul>
+      ) : <p className="text-sm text-muted-foreground">{emptyText}</p>}
+    </div>
   );
 }

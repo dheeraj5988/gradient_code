@@ -17,7 +17,7 @@ export default async function Settings() {
     { name: "Google Drive service account", ok: drive.mode === "service_account", detail: drive.mode === "service_account" ? "Configured" : drive.mode === "api_key" ? "Missing — only an API key is set (public files only)." : "Missing" },
     { name: "Google Drive", ok: drive.mode !== "none", detail: drive.mode === "none" ? "Not configured" : "Credentials present. Use “Test Drive connection” below to confirm Google accepts them." },
     { name: "Private video streaming", ok: drive.mode !== "none", detail: drive.mode === "service_account" ? "Service account configured — private Drive files are streamed through /api/video." : drive.mode === "api_key" ? "API key only — works for files shared as 'anyone with the link'. Use a service account for private files." : "Not configured. Drive lessons fall back to the Drive preview player and the importer can't scan folders." },
-    { name: "Supabase service role key", ok: env("SUPABASE_SERVICE_ROLE_KEY"), detail: "Required for payments: the server creates orders and grants access after verifying the gateway. Manage the gateway itself in Admin → Payments." },
+    { name: "Supabase server key (service role / secret)", ok: env("SUPABASE_SERVICE_ROLE_KEY") || env("SUPABASE_SECRET_KEY"), detail: "Required for payments: the server creates orders and grants access after verifying the gateway. Manage the gateway itself in Admin → Payments." },
   ];
   return (
     <div className="mx-auto max-w-3xl">

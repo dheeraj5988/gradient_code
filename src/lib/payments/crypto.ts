@@ -8,7 +8,7 @@ import crypto from "node:crypto";
  * without setting PAYMENT_SETTINGS_KEY, re-enter the gateway credentials in Admin → Payments.
  */
 function keyMaterial(): Buffer {
-  const secret = process.env.PAYMENT_SETTINGS_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secret = process.env.PAYMENT_SETTINGS_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   if (!secret) throw new Error("encryption_key_missing");
   return crypto.createHash("sha256").update(`gradient-code:payment-settings:v1:${secret}`).digest();
 }

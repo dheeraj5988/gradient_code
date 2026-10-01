@@ -4,6 +4,7 @@ import { requireAdminAction, type ActionResult } from "@/lib/admin/guard";
 import { audit } from "@/lib/admin/audit";
 import { loadCompleteness } from "@/lib/admin/course-data";
 import { SLUG_RE, UUID_RE, bool, lines, num, slugify, str } from "@/lib/admin/util";
+import { createServiceClient, serviceConfigured } from "@/lib/supabase/service";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -157,6 +158,7 @@ export async function duplicateCourse(_prev: unknown, form: FormData): Promise<A
   return { ok: true, data: { id: copy.id }, message: "Copy created as a draft." };
 }
 
+const THUMB_BUCKET = "course-thumbnails";
 const THUMB_TYPES: Record<string, { ext: string; magic: (b: Uint8Array) => boolean }> = {
   "image/png": { ext: "png", magic: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
   "image/jpeg": { ext: "jpg", magic: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
@@ -178,13 +180,23 @@ export async function uploadCourseThumbnail(courseId: string, _prev: unknown, fo
   const { data: course } = await ctx.supabase.from("courses").select("slug").eq("id", courseId).maybeSingle();
   if (!course) return { ok: false, error: "Course not found." };
 
+  // Admin was verified above. With a server key we upload as the service and create the public bucket on
+  // first use, so no manual Storage setup is needed; otherwise fall back to the admin's session + Storage RLS.
+  const storage = serviceConfigured() ? createServiceClient().storage : ctx.supabase.storage;
+  if (serviceConfigured()) {
+    const { data: bucket } = await storage.getBucket(THUMB_BUCKET);
+    if (!bucket) {
+      const { error: be } = await storage.createBucket(THUMB_BUCKET, { public: true, fileSizeLimit: 5 * 1024 * 1024, allowedMimeTypes: Object.keys(THUMB_TYPES) });
+      if (be && !/already exists/i.test(be.message)) return { ok: false, error: `Couldn't create the thumbnails bucket: ${be.message}` };
+    }
+  }
   const path = `${courseId}/${Date.now()}.${kind.ext}`;
-  const up = await ctx.supabase.storage.from("course-thumbnails").upload(path, bytes, { contentType: file.type, upsert: false, cacheControl: "31536000" });
+  const up = await storage.from(THUMB_BUCKET).upload(path, bytes, { contentType: file.type, upsert: false, cacheControl: "31536000" });
   if (up.error) {
     const missing = /bucket not found/i.test(up.error.message);
-    return { ok: false, error: missing ? "Storage bucket missing — run migration 20261001110000_course_thumbnails_bucket.sql in Supabase, then try again." : `Upload failed: ${up.error.message}` };
+    return { ok: false, error: missing ? "Thumbnail storage isn't set up: add SUPABASE_SERVICE_ROLE_KEY in Vercel (the bucket is then created automatically), or run migration 20261001110000_course_thumbnails_bucket.sql in Supabase." : `Upload failed: ${up.error.message}` };
   }
-  const url = ctx.supabase.storage.from("course-thumbnails").getPublicUrl(path).data.publicUrl;
+  const url = storage.from(THUMB_BUCKET).getPublicUrl(path).data.publicUrl;
   const { error } = await ctx.supabase.from("courses").update({ thumbnail_url: url }).eq("id", courseId);
   if (error) return { ok: false, error: error.message };
   await audit(ctx, "course.thumbnail", "course", courseId, "Uploaded a new thumbnail", { path });

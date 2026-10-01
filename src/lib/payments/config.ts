@@ -19,7 +19,7 @@ export type PaymentConfig = {
 /** Reads payment_settings with the service role and decrypts the gateway credentials. Server only. */
 export async function loadPaymentConfig(): Promise<PaymentConfig> {
   const base: PaymentConfig = { serviceReady: serviceConfigured(), enabled: false, testMode: true, testAmount: 1, hasCredentials: false, credentialSource: "none", keyHint: null, creds: null, referral: { enabled: true, commissionPercent: 10, clearanceDays: 14, minPayout: 500 }, problem: null };
-  if (!base.serviceReady) return { ...base, problem: "SUPABASE_SERVICE_ROLE_KEY is not set on the server." };
+  if (!base.serviceReady) return { ...base, problem: "No Supabase server key on the server — set SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) in Vercel and redeploy." };
   try {
     const { data, error } = await createServiceClient().from("payment_settings").select("*").eq("id", true).maybeSingle();
     if (error) return { ...base, problem: "Payment tables are missing — run the payments migration." };

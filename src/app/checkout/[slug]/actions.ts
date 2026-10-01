@@ -1,6 +1,6 @@
 "use server";
 import crypto from "node:crypto";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { IS_DEMO } from "@/lib/supabase/env";
@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { chargeAmount, loadPaymentConfig } from "@/lib/payments/config";
 import { REF_COOKIE, confirmOrder, resolveReferral } from "@/lib/payments/order";
 import { initPayment } from "@/lib/payments/paypur";
+import { requestOrigin } from "@/lib/payments/origin";
 
 const back = (slug: string, msg: string) => redirect(`/checkout/${slug}?error=${encodeURIComponent(msg)}`);
 
@@ -20,15 +21,6 @@ export async function enrollFree(courseId: string, slug: string) {
   const { error } = await supabase.rpc("enroll_free", { _course_id: courseId });
   if (error) back(slug, error.message.includes("course_not_free") ? "This course is not free." : "Enrollment failed. Please try again.");
   redirect(`/learn/${slug}`);
-}
-
-async function siteOrigin() {
-  const env = process.env.NEXT_PUBLIC_SITE_URL;
-  if (env && !/localhost/.test(env)) return env.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`.replace(/\/$/, "");
 }
 
 /**
@@ -74,7 +66,7 @@ export async function startPayment(courseId: string, slug: string, form: FormDat
   const supabase = await createClient();
   await supabase.from("profiles").update({ phone }).eq("id", user.id);
 
-  const origin = await siteOrigin();
+  const origin = await requestOrigin();
   const callback = `${origin}/api/paypur/callback`;
   const res = await initPayment(creds, { orderId: providerOrderId, amount, surl: callback, furl: callback, productinfo: course!.title, firstname, email: user.email!, phone });
   if (!res.ok) {
