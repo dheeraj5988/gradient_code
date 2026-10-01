@@ -11,8 +11,8 @@ const COLS = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-surface">
-      <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_repeat(4,1fr)]">
-        <div className="space-y-3 sm:col-span-2 lg:col-span-1">
+      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-8 py-12 sm:py-14 lg:grid-cols-[1.6fr_repeat(4,minmax(0,1fr))]">
+        <div className="col-span-2 space-y-3 lg:col-span-1">
           <Logo />
           <p className="max-w-xs text-sm text-muted-foreground">
             Practical courses, projects and internships for students and early-career developers.
@@ -21,9 +21,9 @@ export function SiteFooter() {
         {COLS.map((c) => (
           <nav key={c.title} aria-label={c.title}>
             <h2 className="mb-3 text-sm font-semibold">{c.title}</h2>
-            <ul className="space-y-2.5">
+            <ul>
               {c.links.map(([label, href]) => (
-                <li key={href}><Link href={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link></li>
+                <li key={href}><Link href={href} className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground lg:min-h-9">{label}</Link></li>
               ))}
             </ul>
           </nav>

@@ -23,9 +23,9 @@ export function buttonClass({ variant = "primary", size = "md" }: ButtonStyle = 
 }
 
 export function Button({ variant, size, className, ...props }: ButtonStyle & ComponentProps<"button">) {
-  return <button className={buttonClass({ variant, size }, className)} {...props} />;
+  return <button className={buttonClass({ variant, size }, className)} {...props} data-gc-control="" />;
 }
 
 export function ButtonLink({ variant, size, className, ...props }: ButtonStyle & ComponentProps<typeof Link>) {
-  return <Link className={buttonClass({ variant, size }, className)} {...props} />;
+  return <Link className={buttonClass({ variant, size }, className)} {...props} data-gc-control="" />;
 }

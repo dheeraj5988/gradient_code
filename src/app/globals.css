@@ -170,19 +170,25 @@
 }
 
 /*
- * Functional motion only (page entry, hover feedback, disclosure). Short, ease-out,
- * never looping or decorative; fully disabled by the reduced-motion rule below.
+ * Motion: short, purposeful, never looping. Disabled by the reduced-motion rules below.
  */
 @theme {
-  --animate-enter: enter 200ms cubic-bezier(0.2, 0, 0, 1) both;
-  --animate-fade-in: fade-in 150ms ease-out both;
+  --animate-enter: enter var(--gc-enter) var(--gc-ease) both;
+  --animate-fade-in: fade-in var(--gc-fast) var(--gc-ease) both;
+  --animate-sheet-in: sheet-in var(--gc-sheet) var(--gc-ease) both;
+  --animate-drawer-in: drawer-in var(--gc-sheet) var(--gc-ease) both;
   @keyframes enter {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
   }
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sheet-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes drawer-in {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: none; }
   }
 }
 
@@ -199,5 +205,147 @@ details[open] > :not(summary) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* =====================================================================
+ * Public / learner visual layer (opt-in via `.gc-public`; admin never uses it).
+ * Restrained glass on structural bars only, one static hero tint, 44px touch targets,
+ * safe-area helpers. Reading surfaces, cards, forms and video stay opaque.
+ * ===================================================================== */
+:root {
+  --gc-glass: rgb(255 255 255 / 0.92);
+  --gc-glass-strong: rgb(255 255 255 / 0.97);
+  --gc-hairline: rgb(15 23 42 / 0.14);
+  --gc-scrim: rgb(15 23 42 / 0.40);
+  --gc-tint: color-mix(in srgb, var(--primary) 6%, transparent);
+  --gc-grid-line: color-mix(in srgb, var(--primary) 3%, transparent);
+  --gc-elevated: 0 8px 24px -12px rgb(15 23 42 / 0.20), 0 2px 6px -3px rgb(15 23 42 / 0.10);
+  --gc-blur: 12px;
+  --gc-blur-strong: 16px;
+  --gc-fast: 150ms;
+  --gc-enter: 200ms;
+  --gc-sheet: 240ms;
+  --gc-ease: cubic-bezier(0.2, 0, 0, 1);
+  --gc-media: #000000;
+  --gc-on-media: #ffffff;
+}
+@media screen {
+  html.dark {
+    --gc-glass: rgb(17 24 39 / 0.94);
+    --gc-glass-strong: rgb(17 24 39 / 0.98);
+    --gc-hairline: rgb(203 213 225 / 0.18);
+    --gc-scrim: rgb(0 0 0 / 0.58);
+    --gc-tint: color-mix(in srgb, var(--primary) 8%, transparent);
+    --gc-grid-line: color-mix(in srgb, var(--primary) 4%, transparent);
+    --gc-elevated: 0 8px 24px -12px rgb(0 0 0 / 0.55), 0 2px 6px -3px rgb(0 0 0 / 0.35);
+  }
+}
+@theme inline {
+  --color-glass: var(--gc-glass);
+  --color-glass-strong: var(--gc-glass-strong);
+  --color-hairline: var(--gc-hairline);
+  --color-scrim: var(--gc-scrim);
+  --color-hero-tint: var(--gc-tint);
+  --color-pattern-line: var(--gc-grid-line);
+  --color-media: var(--gc-media);
+  --color-on-media: var(--gc-on-media);
+  --shadow-elevated: var(--gc-elevated);
+  --ease-gc: var(--gc-ease);
+}
+
+@utility glass {
+  &:where(.gc-public, .gc-public *) {
+    background-color: var(--background); /* opaque fallback */
+    border-color: var(--gc-hairline);
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      background-color: var(--gc-glass);
+      -webkit-backdrop-filter: blur(var(--gc-blur));
+      backdrop-filter: blur(var(--gc-blur));
+    }
+  }
+}
+@utility glass-strong {
+  &:where(.gc-public, .gc-public *) {
+    background-color: var(--background);
+    border-color: var(--gc-hairline);
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      background-color: var(--gc-glass-strong);
+      -webkit-backdrop-filter: blur(var(--gc-blur-strong));
+      backdrop-filter: blur(var(--gc-blur-strong));
+    }
+  }
+}
+@utility hero-tint {
+  &:where(.gc-public, .gc-public *) {
+    background-image: radial-gradient(ellipse 70% 90% at 85% 0%, var(--gc-tint), transparent 72%);
+  }
+}
+/* Optional; not applied by default. Never over video or prose. */
+@utility faint-grid {
+  &:where(.gc-public, .gc-public *) {
+    background-image:
+      linear-gradient(var(--gc-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gc-grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}
+@utility tap-target { min-height: 44px; min-width: 44px; }
+@utility safe-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); }
+@utility safe-inline {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+@utility motion-ui {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: var(--gc-fast);
+  transition-timing-function: var(--gc-ease);
+}
+
+/* Deliberately unlayered: scoped sizing must override utility sizes, only inside .gc-public. */
+.gc-public {
+  --gc-site-header: calc(4rem + env(safe-area-inset-top, 0px));
+  --gc-learn-header: calc(3.5rem + env(safe-area-inset-top, 0px));
+}
+.gc-public :where(button, [data-gc-control]) {
+  min-height: 44px;
+  min-width: 44px;
+}
+.gc-public :where(input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 1rem;
+}
+.gc-public :where(input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), select) {
+  min-height: 44px;
+}
+.gc-public :where(textarea) { min-height: 7rem; }
+.gc-public :where([data-gc-control]) {
+  height: auto;
+  padding-block: 0.625rem;
+  white-space: normal;
+  text-align: center;
+}
+.gc-public :where(.gc-sheet)::backdrop { background: var(--gc-scrim); }
+.gc-sheet.gc-public::backdrop { background: var(--gc-scrim); }
+.gc-public:has([data-gc-buy-bar]) > footer {
+  padding-bottom: var(--gc-buy-bar-height, 0px);
+}
+@media (width >= 1024px) {
+  .gc-public:has([data-gc-buy-bar]) > footer { padding-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gc-public, .gc-public *, .gc-public *::before, .gc-public *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  .gc-public .glass, .gc-public .glass-strong,
+  .gc-public.glass, .gc-public.glass-strong {
+    background: var(--background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
