@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { passwordProblem } from "@/lib/auth/password";
+import { PasswordRules } from "@/components/auth/password-rules";
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -12,6 +14,7 @@ export function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pwValue, setPwValue] = useState("");
 
   // The recovery link signs the user in (via /auth/callback); without that session we cannot change the password.
   useEffect(() => { createClient().auth.getUser().then(({ data }) => setReady(data.user ? "ok" : "none")); }, []);
@@ -20,7 +23,8 @@ export function ResetPasswordForm() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const pw = String(f.get("password")), pw2 = String(f.get("confirm"));
-    if (pw.length < 8) return setError("Use at least 8 characters.");
+    const problem = passwordProblem(pw);
+    if (problem) return setError(problem);
     if (pw !== pw2) return setError("Passwords do not match.");
     setError(null); setLoading(true);
     const { error } = await createClient().auth.updateUser({ password: pw });
@@ -54,7 +58,7 @@ export function ResetPasswordForm() {
         <h1 className="text-2xl font-bold">Choose a new password</h1>
         <p className="mt-1 text-sm text-muted-foreground">Use at least 8 characters.</p>
       </div>
-      <div><Label htmlFor="password">New password</Label><Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
+      <div><Label htmlFor="password">New password</Label><Input id="password" name="password" type="password" required minLength={8} value={pwValue} onChange={(e) => setPwValue(e.target.value)} aria-describedby="pw-rules" autoComplete="new-password" /><PasswordRules value={pwValue} id="pw-rules" /></div>
       <div><Label htmlFor="confirm">Confirm password</Label><Input id="confirm" name="confirm" type="password" required minLength={8} autoComplete="new-password" /></div>
       {error ? <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p> : null}
       <Button className="w-full" disabled={loading}>{loading ? "Saving…" : "Update password"}</Button>

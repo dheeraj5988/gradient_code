@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { passwordProblem } from "@/lib/auth/password";
+import { PasswordRules } from "@/components/auth/password-rules";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const [loading, setLoading] = useState(false);
+  const [pw, setPw] = useState("");
   const [msg, setMsg] = useState<{ tone: "error" | "ok"; text: string } | null>(params.get("error") === "oauth" ? { tone: "error", text: "Google sign-in did not complete. Please try again." } : null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -21,6 +24,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email"));
     const password = String(f.get("password"));
+    // New passwords only — existing accounts can still log in with an older password.
+    if (mode === "signup") {
+      const problem = passwordProblem(password);
+      if (problem) return setMsg({ tone: "error", text: problem });
+    }
     setLoading(true);
     setMsg(null);
     const supabase = createClient();
@@ -67,7 +75,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       <form onSubmit={onSubmit} className="space-y-4">
         {mode === "signup" ? (<div><Label htmlFor="name">Full name</Label><Input id="name" name="name" required autoComplete="name" /></div>) : null}
         <div><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" required autoComplete="email" /></div>
-        <div><div className="mb-1.5 flex items-center justify-between"><Label htmlFor="password" className="mb-0">Password</Label>{mode === "login" ? <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">Forgot password?</Link> : null}</div><Input id="password" name="password" type="password" required minLength={8} autoComplete={mode === "login" ? "current-password" : "new-password"} /></div>
+        <div><div className="mb-1.5 flex items-center justify-between"><Label htmlFor="password" className="mb-0">Password</Label>{mode === "login" ? <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">Forgot password?</Link> : null}</div><Input id="password" name="password" type="password" required minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} aria-describedby={mode === "signup" ? "pw-rules" : undefined} autoComplete={mode === "login" ? "current-password" : "new-password"} />{mode === "signup" ? <PasswordRules value={pw} id="pw-rules" /> : null}</div>
         {msg ? <p role={msg.tone === "error" ? "alert" : "status"} className={msg.tone === "error" ? "rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger" : "rounded-lg bg-success-soft px-3 py-2 text-sm text-success"}>{msg.text}</p> : null}
         <Button className="w-full" disabled={loading}>{loading ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}</Button>
       </form>
