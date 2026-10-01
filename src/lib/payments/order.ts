@@ -12,17 +12,27 @@ export async function resolveReferral(code: string | undefined, buyerId: string)
   return data && data.is_active && data.user_id !== buyerId ? (data.id as string) : null;
 }
 
+/** Paypur adds a random 0–99 paise to every transaction (unique-amount UPI matching). */
+export const GATEWAY_EXTRA_PAISE_MAX = 99;
+
 /**
  * Which verified amount to check against our order. Both sources are trusted (the callback amount is
- * HMAC-signed with our salt; the status API is server-to-server), but the status API may report
- * paise (200 for ₹2.00). Use the first candidate that matches our order; otherwise pass the
- * gateway's figure so finalize_paid_order() records a real mismatch.
+ * HMAC-signed with our salt; the status API is server-to-server), but:
+ *  - Paypur charges the order amount PLUS 0–99 random paise, so ₹2.00 may arrive as ₹2.37;
+ *  - the status API may report paise (237 for ₹2.37).
+ * A payment counts if it is at least the order amount and at most +₹0.99 — never less.
+ * Otherwise the gateway's figure is passed on so finalize_paid_order() records a real mismatch.
  */
 export function paidAmountFor(expected: number, signed: number | null, statusApi: number | null): number {
-  const same = (n: number | null) => n != null && Number.isFinite(n) && Math.round(n * 100) === Math.round(expected * 100);
-  if (same(signed)) return expected;
-  if (same(statusApi)) return expected;
-  if (statusApi != null && same(statusApi / 100)) return expected; // paise
+  const want = Math.round(expected * 100);
+  const covers = (n: number | null) => {
+    if (n == null || !Number.isFinite(n)) return false;
+    const extra = Math.round(n * 100) - want;
+    return extra >= 0 && extra <= GATEWAY_EXTRA_PAISE_MAX;
+  };
+  if (covers(signed)) return expected;
+  if (covers(statusApi)) return expected;
+  if (statusApi != null && covers(statusApi / 100)) return expected; // status API in paise
   return statusApi ?? signed ?? expected;
 }
 
