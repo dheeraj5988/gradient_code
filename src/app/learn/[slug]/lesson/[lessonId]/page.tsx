@@ -9,7 +9,7 @@ import { VideoPlayer } from "@/components/learn/video-player";
 import { CompleteButton } from "@/components/learn/complete-button";
 import { NewNoteForm, NoteItem } from "@/components/learn/notes-panel";
 import { ResourceCard } from "@/components/resources/resource-card";
-import { getLearningContext, getLessonContent, getNotes, getResources, getVideoPosition, resourceHref } from "@/lib/data/learning";
+import { getLearningContext, getLessonContent, getLessonExtras, getNotes, getResources, getVideoPosition, resourceHref } from "@/lib/data/learning";
 import { formatDuration } from "@/lib/utils";
 import { toPlayerSource, type PlayerSource } from "@/lib/video";
 import { isDriveConfigured } from "@/lib/google-drive/client";
@@ -53,9 +53,14 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
     }
   }
 
-  const [position, notes, resources] = enrolled
-    ? await Promise.all([getVideoPosition(ctx.userId, lesson.id), getNotes(ctx.userId, ctx.course.id, { lessonId: lesson.id }), getResources(ctx.course.id)])
-    : [0, [], []];
+  const [position, notes, resources, extras] = await Promise.all([
+    enrolled ? getVideoPosition(ctx.userId, lesson.id) : 0,
+    enrolled ? getNotes(ctx.userId, ctx.course.id, { lessonId: lesson.id }) : [],
+    enrolled ? getResources(ctx.course.id) : [],
+    content ? getLessonExtras(lesson.id) : { description: null, captions: [] },
+  ]);
+  // Subtitle tracks only work in the native player (authorised /api/video stream), not in embeds.
+  const captions = source?.kind === "file" ? extras.captions.map((c) => ({ src: `/api/caption/${c.id}`, srcLang: c.language, label: c.label, default: c.is_default })) : [];
   const lessonResources = resources.filter((r) => r.lesson_id === lesson.id || (!r.lesson_id && r.module_id === lesson.module_id));
   const hrefs = await Promise.all(lessonResources.map(resourceHref));
 
@@ -73,7 +78,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
               </div>
             </div>
           ) : source ? (
-            <VideoPlayer key={lesson.id} source={source} lessonId={lesson.id} title={lesson.title} initialPosition={position} track={enrolled} courseHref={base} />
+            <VideoPlayer key={lesson.id} source={source} lessonId={lesson.id} title={lesson.title} initialPosition={position} track={enrolled} courseHref={base} captions={captions} />
           ) : lesson.type === "live" && content.join_url ? (
             <div className="grid h-full place-items-center p-6 text-center text-white">
               <div>
@@ -110,8 +115,11 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
               {
                 id: "overview",
                 label: "Overview",
-                content: content?.content_text ? (
-                  <div className="text-[15px] leading-relaxed whitespace-pre-line">{content.content_text}</div>
+                content: extras.description || content?.content_text ? (
+                  <div className="space-y-4">
+                    {extras.description ? <p className="text-[15px] leading-relaxed whitespace-pre-line text-muted-foreground">{extras.description}</p> : null}
+                    {content?.content_text ? <div className="text-[15px] leading-relaxed whitespace-pre-line">{content.content_text}</div> : null}
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">{mod ? `Part of “${mod.title}”.` : ""} No written material for this lesson.</p>
                 ),

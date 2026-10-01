@@ -1,4 +1,4 @@
-import { BookText, Database, ExternalLink, FileCode2, FileText, FolderGit2, Presentation, Video, Download, LayoutTemplate } from "lucide-react";
+import { BookText, Database, ExternalLink, FileCode2, FileText, FolderGit2, Presentation, Video, Download, LayoutTemplate, File } from "lucide-react";
 import type { Resource } from "@/lib/data/learning-types";
 
 const META: Record<Resource["resource_type"], { icon: typeof FileText; label: string }> = {
@@ -11,6 +11,7 @@ const META: Record<Resource["resource_type"], { icon: typeof FileText; label: st
   template: { icon: LayoutTemplate, label: "Template" },
   presentation: { icon: Presentation, label: "Slides" },
   recording: { icon: Video, label: "Recording" },
+  other: { icon: File, label: "File" },
 };
 
 export function ResourceCard({ r, href, context }: { r: Resource; href: string | null; context?: string | null }) {

@@ -47,3 +47,21 @@ Existing lessons created by the old Lovable import already have their Drive IDs 
 - videos that are already lessons are recognised by Drive file ID and skipped (whatever module they are in);
 - legacy modules without a Drive link are **matched by title** (e.g. folder "Section 04 - HTML5" ↔ module "HTML5") and linked to their folder; unmatched folders become new draft modules;
 - files not yet in the course (e.g. the Full Stack course's code assets, which Lovable stored as text lessons) are added as **unpublished resources**. Review the preview carefully; you can untick anything.
+
+## What gets imported (2026-10-01)
+Everything in the folder tree (up to 10 levels, 20,000 items) is imported as **unpublished drafts**. Nothing is silently dropped — the preview lists every skipped file with a reason.
+
+| In Drive | Becomes |
+|---|---|
+| Subfolder of the course folder | Module (natural order: `2` before `10`) |
+| Video (`mp4`, `webm`, `mov`, `m4v`; `mkv/avi/…` imported with a "convert to MP4" warning) | Video lesson, streamed privately via `/api/video/[lessonId]` |
+| `Intro.srt`, `Intro.en.vtt`, `Intro - Hindi.srt` next to `Intro.mp4` | Subtitle track(s) for that lesson (SRT converted to WebVTT on the fly) |
+| `Intro.txt` / `Intro.md` next to `Intro.mp4` | That lesson's description |
+| `description.txt` / `README.md` in the course folder or a module folder | Course / module description |
+| Drive "Description" field of a file or folder | Description (a sidecar file wins) |
+| PDF, docs, slides, sheets, code, archives, images, audio, any other file | Downloadable resource (Google Docs/Slides export as PDF, Sheets as XLSX) |
+| Shortcuts | Resolved to their target (the target must be shared with the service account) |
+| Skipped | `.DS_Store`/`Thumbs.db`, Google Forms/Sites/Maps/Apps Script, exact duplicates |
+
+Re-importing never overwrites: it adds new files, missing subtitles, and descriptions only where they are empty. If one module fails, the rest still import and the summary lists the failure — run the import again to retry.
+Subtitles need the Drive service account to be configured (native player). Requires migration `20261001100000_drive_import_captions.sql`.

@@ -26,7 +26,7 @@ export default async function Resources({ searchParams }: { searchParams: Promis
       <AdminHeader title="Resources" description="PDFs, notes, cheat sheets, repositories and other course material." actions={<ButtonLink href="/admin/resources/new" size="sm">New resource</ButtonLink>} />
       <Toolbar params={p} placeholder="Search resources" filters={[
         { name: "course", label: "Course", options: courses.map((c) => [c.id, c.title]) },
-        { name: "type", label: "Type", options: [["pdf", "PDF"], ["notes", "Notes"], ["cheat_sheet", "Cheat sheet"], ["external_link", "Link"], ["code_repository", "Code"], ["dataset", "Dataset"], ["template", "Template"], ["presentation", "Slides"], ["recording", "Recording"]] },
+        { name: "type", label: "Type", options: [["pdf", "PDF"], ["notes", "Notes"], ["cheat_sheet", "Cheat sheet"], ["external_link", "Link"], ["code_repository", "Code"], ["dataset", "Dataset"], ["template", "Template"], ["presentation", "Slides"], ["recording", "Recording"], ["other", "Other file"]] },
         { name: "status", label: "Status", options: [["published", "Published"], ["draft", "Draft"]] },
       ]} />
       <DataTable base="/admin/resources" params={p} total={count ?? 0}

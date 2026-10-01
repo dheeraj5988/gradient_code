@@ -24,6 +24,7 @@ export function VideoPlayer({
   initialPosition,
   track,
   courseHref,
+  captions = [],
 }: {
   source: NonNullable<PlayerSource>;
   lessonId: string;
@@ -31,6 +32,7 @@ export function VideoPlayer({
   initialPosition: number;
   track: boolean;
   courseHref?: string;
+  captions?: { src: string; srcLang: string; label: string; default?: boolean }[];
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -171,7 +173,11 @@ export function VideoPlayer({
             onTimeUpdate={(e) => onTime(e.currentTarget.currentTime, e.currentTarget.duration || null)}
             onPause={() => persist(true)}
             onEnded={() => persist(true)}
-          />
+          >
+            {captions.map((c, i) => (
+              <track key={c.src} kind="subtitles" src={c.src} srcLang={c.srcLang} label={c.label} default={c.default ?? i === 0} />
+            ))}
+          </video>
           {loading && !hasError ? (
             <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40">
               <Loader2 className="h-8 w-8 animate-spin text-white/80" aria-hidden />

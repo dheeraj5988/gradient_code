@@ -8,7 +8,7 @@ import { SLUG_RE, UUID_RE, bool, lines, num, parseDriveId, slugify, str } from "
 
 const QTYPES = ["mcq", "multi_select", "true_false", "short_answer", "coding", "debugging", "output_prediction", "scenario"];
 const DIFFS = ["easy", "medium", "hard"];
-const RTYPES = ["pdf", "notes", "cheat_sheet", "external_link", "code_repository", "dataset", "template", "presentation", "recording"];
+const RTYPES = ["pdf", "notes", "cheat_sheet", "external_link", "code_repository", "dataset", "template", "presentation", "recording", "other"];
 const optUuid = (v: string) => (v && UUID_RE.test(v) ? v : null);
 
 function revalidateLearning() {

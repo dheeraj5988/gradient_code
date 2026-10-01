@@ -39,7 +39,7 @@ export type Resource = {
   lesson_id: string | null;
   title: string;
   description: string | null;
-  resource_type: "pdf" | "notes" | "cheat_sheet" | "external_link" | "code_repository" | "dataset" | "template" | "presentation" | "recording";
+  resource_type: "pdf" | "notes" | "cheat_sheet" | "external_link" | "code_repository" | "dataset" | "template" | "presentation" | "recording" | "other";
   url: string | null;
   file_path: string | null;
   drive_file_id?: string | null;

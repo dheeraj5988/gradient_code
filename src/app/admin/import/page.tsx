@@ -6,6 +6,8 @@ import { driveConfigStatus } from "@/lib/google-drive/client";
 import { KNOWN_DRIVE_SOURCES } from "@/lib/google-drive/known-sources";
 
 export const metadata = { title: "Import from Google Drive" };
+// Large folders: scanning + importing can take minutes (server actions run in this route).
+export const maxDuration = 300;
 
 export default async function ImportPage({ searchParams }: { searchParams: Promise<{ course?: string }> }) {
   const ctx = (await requireAdminPage())!;

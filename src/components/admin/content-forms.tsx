@@ -74,7 +74,7 @@ export function QuestionForm({ q, keyRow, scope }: { q?: any; keyRow?: any; scop
   );
 }
 
-const RTYPES: [string, string][] = [["pdf", "PDF"], ["notes", "Notes"], ["cheat_sheet", "Cheat sheet"], ["external_link", "External link"], ["code_repository", "Code repository"], ["dataset", "Dataset"], ["template", "Template"], ["presentation", "Presentation"], ["recording", "Recording"]];
+const RTYPES: [string, string][] = [["pdf", "PDF"], ["notes", "Notes"], ["cheat_sheet", "Cheat sheet"], ["external_link", "External link"], ["code_repository", "Code repository"], ["dataset", "Dataset"], ["template", "Template"], ["presentation", "Presentation"], ["recording", "Recording"], ["other", "Other file"]];
 
 export function ResourceForm({ r, scope }: { r?: any; scope: ScopeData }) {
   const initialKind = r?.drive_file_id ? "drive" : r?.file_path ? "storage" : "url";

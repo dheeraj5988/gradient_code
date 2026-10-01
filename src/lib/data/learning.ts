@@ -112,6 +112,20 @@ export const getLessonContent = cache(async (lessonId: string): Promise<LessonCo
     : null;
 });
 
+export type CaptionTrack = { id: string; language: string; label: string; is_default: boolean };
+export type LessonExtras = { description: string | null; captions: CaptionTrack[] };
+
+/** Description + subtitle tracks. Same access rule as lesson_content (checked in the DB). */
+export const getLessonExtras = cache(async (lessonId: string): Promise<LessonExtras> => {
+  const none: LessonExtras = { description: null, captions: [] };
+  if (IS_DEMO) return none;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lesson_extras", { _lesson_id: lessonId });
+  if (error) return none; // migration 20261001100000 not applied yet
+  const row = (data as any[] | null)?.[0];
+  return row ? { description: row.description ?? null, captions: Array.isArray(row.captions) ? row.captions : [] } : none;
+});
+
 export async function getVideoPosition(userId: string | null, lessonId: string) {
   if (IS_DEMO) return demoStore.video.get(lessonId) ?? 0;
   if (!userId) return 0;

@@ -143,22 +143,29 @@ export async function driveAuth(): Promise<{ headers: Record<string, string>; ke
   return { headers: {}, key: process.env.GOOGLE_DRIVE_API_KEY || null };
 }
 
-export type DriveItem = { id: string; name: string; mimeType: string; size?: number; modifiedTime?: string };
+export type DriveItem = { id: string; name: string; mimeType: string; size?: number; modifiedTime?: string; description?: string };
 export const FOLDER_MIME = "application/vnd.google-apps.folder";
+export const SHORTCUT_MIME = "application/vnd.google-apps.shortcut";
 
 export class DriveError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-/** List direct children of a folder (all pages). Throws DriveError on 403/404. */
+type RawFile = { id: string; name: string; mimeType: string; size?: string; modifiedTime?: string; description?: string; shortcutDetails?: { targetId?: string; targetMimeType?: string } };
+
+/**
+ * List direct children of a folder (all pages). Throws DriveError on 403/404.
+ * Shortcuts are resolved to their target (ID + type), keeping the shortcut's name so
+ * ordering in the folder is preserved; size of shortcut targets is unknown here.
+ */
 export async function listFolder(folderId: string): Promise<DriveItem[]> {
   const { headers, key } = await driveAuth();
   const out: DriveItem[] = [];
   let pageToken: string | undefined;
-  for (let page = 0; page < 50; page++) {
+  for (let page = 0; page < 200; page++) {
     const url = new URL(`${DRIVE_API_BASE}/drive/v3/files`);
     url.searchParams.set("q", `'${folderId.replace(/'/g, "")}' in parents and trashed = false`);
-    url.searchParams.set("fields", "nextPageToken, files(id,name,mimeType,size,modifiedTime)");
+    url.searchParams.set("fields", "nextPageToken, files(id,name,mimeType,size,modifiedTime,description,shortcutDetails(targetId,targetMimeType))");
     url.searchParams.set("pageSize", "1000");
     url.searchParams.set("supportsAllDrives", "true");
     url.searchParams.set("includeItemsFromAllDrives", "true");
@@ -166,19 +173,40 @@ export async function listFolder(folderId: string): Promise<DriveItem[]> {
     if (key) url.searchParams.set("key", key);
     const res = await fetch(url, { headers, cache: "no-store" });
     if (!res.ok) throw new DriveError(res.status, res.status === 404 ? "Folder not found or not shared with the service account." : res.status === 403 ? "Access denied by Google Drive." : `Drive API error ${res.status}`);
-    const json = (await res.json()) as { nextPageToken?: string; files: { id: string; name: string; mimeType: string; size?: string; modifiedTime?: string }[] };
-    out.push(...json.files.map((f) => ({ id: f.id, name: f.name, mimeType: f.mimeType, size: f.size ? Number(f.size) : undefined, modifiedTime: f.modifiedTime })));
+    const json = (await res.json()) as { nextPageToken?: string; files: RawFile[] };
+    for (const f of json.files) {
+      const target = f.mimeType === SHORTCUT_MIME ? f.shortcutDetails : undefined;
+      if (target?.targetId) {
+        out.push({ id: target.targetId, name: f.name, mimeType: target.targetMimeType || "application/octet-stream", description: f.description || undefined });
+      } else {
+        out.push({ id: f.id, name: f.name, mimeType: f.mimeType, size: f.size ? Number(f.size) : undefined, modifiedTime: f.modifiedTime, description: f.description || undefined });
+      }
+    }
     if (!json.nextPageToken) break;
     pageToken = json.nextPageToken;
   }
   return out;
 }
 
+/** Reads a small text file (sidecar descriptions, subtitles). Returns null if missing, too big or not text. */
+export async function downloadSmallText(fileId: string, maxBytes = 512_000): Promise<string | null> {
+  const { headers, key } = await driveAuth();
+  const url = new URL(`${DRIVE_API_BASE}/drive/v3/files/${encodeURIComponent(fileId)}`);
+  url.searchParams.set("alt", "media");
+  url.searchParams.set("supportsAllDrives", "true");
+  if (key) url.searchParams.set("key", key);
+  const res = await fetch(url, { headers: { ...headers, Range: `bytes=0-${maxBytes - 1}` }, cache: "no-store" });
+  if (!res.ok && res.status !== 206) { void res.body?.cancel().catch(() => {}); return null; }
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length > maxBytes) return null;
+  return buf.toString("utf8").replace(/^\uFEFF/, "");
+}
+
 /** Folder metadata (name) — used to validate the root folder before scanning. */
 export async function getFolder(folderId: string): Promise<DriveItem> {
   const { headers, key } = await driveAuth();
   const url = new URL(`${DRIVE_API_BASE}/drive/v3/files/${encodeURIComponent(folderId)}`);
-  url.searchParams.set("fields", "id,name,mimeType,modifiedTime");
+  url.searchParams.set("fields", "id,name,mimeType,modifiedTime,description");
   url.searchParams.set("supportsAllDrives", "true");
   if (key) url.searchParams.set("key", key);
   const res = await fetch(url, { headers, cache: "no-store" });

@@ -26,10 +26,17 @@ export function ImportWizard({ courses, sources, defaultCourse, configured }: { 
         <ul className="mt-3 space-y-1 text-sm">
           {r.createdCourse ? <li>Created a new <strong>draft</strong> course.</li> : null}
           <li>{r.modulesCreated} modules, {r.lessonsCreated} lessons and {r.resourcesCreated} resources added — all <strong>unpublished</strong>.</li>
+          {r.captionsAdded || r.descriptionsAdded ? <li>{r.captionsAdded} subtitle tracks and {r.descriptionsAdded} descriptions added.</li> : null}
           {r.modulesLinked ? <li>{r.modulesLinked} existing modules were matched by name and linked to their Drive folders.</li> : null}
           {r.skippedExisting ? <li>{r.skippedExisting} items were already imported and were left untouched.</li> : null}
           {r.excluded ? <li>{r.excluded} items were excluded by you.</li> : null}
         </ul>
+        {r.failed.length ? (
+          <div role="alert" className="mt-3 rounded-lg border border-danger/30 bg-danger-soft p-3 text-sm text-danger">
+            <p className="font-semibold">{r.failed.length} part{r.failed.length > 1 ? "s" : ""} could not be imported. Everything else was saved; run the import again to retry.</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">{r.failed.slice(0, 20).map((f) => <li key={f}>{f}</li>)}</ul>
+          </div>
+        ) : null}
         <p className="mt-3 text-sm text-muted-foreground">Next: review lesson titles, mark a free preview lesson, publish lessons, then publish the course.</p>
         <div className="mt-4 flex gap-2"><ButtonLink href={`/admin/courses/${r.courseId}/curriculum`} size="sm">Review curriculum</ButtonLink><ButtonLink href={`/admin/courses/${r.courseId}/edit`} variant="outline" size="sm">Course settings</ButtonLink></div>
       </section>
@@ -85,8 +92,8 @@ export function ImportWizard({ courses, sources, defaultCourse, configured }: { 
           <section className="rounded-xl border border-border bg-card p-5">
             <h2 className="text-sm font-semibold">2. Review the mapping</h2>
             <p className="mt-1 text-sm text-muted-foreground">From <strong>{plan.root.name}</strong> → {scan.courseTitle ? <>existing course <strong>{scan.courseTitle}</strong></> : "a new draft course"}.</p>
-            <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              {[["Modules", plan.totals.modules], ["Video lessons", plan.totals.lessons], ["Resources", plan.totals.resources], ["Already imported", plan.totals.alreadyImported], ["Skipped", plan.totals.skipped]].map(([l, v]) => (
+            <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+              {[["Modules", plan.totals.modules], ["Video lessons", plan.totals.lessons], ["Resources", plan.totals.resources], ["Subtitles", plan.totals.captions], ["Descriptions", plan.totals.descriptions], ["Already imported", plan.totals.alreadyImported], ["Skipped", plan.totals.skipped]].map(([l, v]) => (
                 <div key={l as string} className="rounded-lg border border-border p-3"><dt className="text-xs text-muted-foreground">{l}</dt><dd className="text-xl font-bold tabular-nums">{v}</dd></div>
               ))}
             </dl>
@@ -120,7 +127,7 @@ export function ImportWizard({ courses, sources, defaultCourse, configured }: { 
                             <input type="checkbox" disabled={f.exists || mOff} checked={!off && !f.exists} onChange={() => toggle(`f:${f.driveFileId}`)} className="h-4 w-4 accent-[var(--primary)]" aria-label={`Include ${f.driveName}`} />
                             {f.t === "lesson" ? <PlayCircle className="h-4 w-4 shrink-0 text-subtle-foreground" aria-hidden /> : <FileText className="h-4 w-4 shrink-0 text-subtle-foreground" aria-hidden />}
                             <span className="min-w-0 flex-1"><span className="block truncate">{f.title}</span><span className="block truncate font-mono text-[11px] text-subtle-foreground">{f.driveName}</span></span>
-                            <span className="shrink-0 text-xs text-muted-foreground">{f.exists ? "Already imported" : f.t === "resource" ? (f as { resourceType: string }).resourceType.replace("_", " ") : mb(f.size)}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground">{f.exists ? "Already imported" : f.t === "resource" ? (f as { resourceType: string }).resourceType.replace("_", " ") : [mb(f.size), "captions" in f && f.captions.length ? `CC ×${f.captions.length}` : "", "descriptionFileId" in f && (f.descriptionFileId || f.description) ? "description" : ""].filter(Boolean).join(" · ")}</span>
                           </li>
                         );
                       })}
