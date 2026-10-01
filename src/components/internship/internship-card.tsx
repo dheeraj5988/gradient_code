@@ -10,7 +10,7 @@ export function stipendText(i: Internship) {
 
 export function InternshipCard({ i }: { i: Internship }) {
   return (
-    <article className="relative rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-card sm:p-6">
+    <article className="relative rounded-xl border border-border bg-card p-5 transition-[box-shadow,transform] duration-200 hover:shadow-card motion-safe:hover:-translate-y-0.5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-base font-semibold sm:text-lg">

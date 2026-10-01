@@ -14,7 +14,7 @@ export function CourseCard({ course, priority }: { course: Course; priority?: bo
   ].filter(Boolean) as { icon: typeof Clock; text: string }[];
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-card">
+    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-[box-shadow,transform] duration-200 hover:shadow-card motion-safe:hover:-translate-y-0.5">
       <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} priority={priority} />
       <div className="flex flex-1 flex-col p-4">
         <p className="text-xs font-medium text-primary">{course.track}</p>

@@ -15,7 +15,7 @@ export type ButtonStyle = { variant?: keyof typeof variants; size?: keyof typeof
 
 export function buttonClass({ variant = "primary", size = "md" }: ButtonStyle = {}, extra?: string) {
   return cn(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-150 motion-safe:active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
     variants[variant],
     sizes[size],
     extra,
