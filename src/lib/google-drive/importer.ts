@@ -120,7 +120,8 @@ export type PlanLesson = {
   driveFileId: string; driveName: string; title: string; mimeType: string; size: number | null; modifiedTime: string | null; exists: boolean;
   description: string | null; descriptionFileId: string | null; captions: PlanCaption[];
 };
-export type PlanResource = { driveFileId: string; driveName: string; title: string; resourceType: ResourceKind; mimeType: string; size: number | null; exists: boolean; description: string | null };
+/** lessonDriveFileId: set when the file sits in a "<lesson> resources" folder next to that lesson's video. */
+export type PlanResource = { driveFileId: string; driveName: string; title: string; resourceType: ResourceKind; mimeType: string; size: number | null; exists: boolean; description: string | null; lessonDriveFileId: string | null };
 export type PlanModule = { key: string; driveFolderId: string | null; title: string; sourceName: string; exists: boolean; lessons: PlanLesson[]; resources: PlanResource[]; description: string | null; descriptionFileId: string | null };
 export type ImportPlan = {
   root: { id: string; name: string };
@@ -175,7 +176,23 @@ export function buildPlan(tree: Tree, existing: Existing = { moduleFolderIds: ne
 
   // Pair sidecars with videos in the same folder.
   const videoKey = (parentId: string, base: string) => `${parentId}\u0000${base}`;
-  const videosByKey = new Set(unique.filter((f) => classify(f).kind === "video").map((f) => videoKey(f.parentId, baseName(f.name))));
+  const videoIdByKey = new Map(unique.filter((f) => classify(f).kind === "video").map((f) => [videoKey(f.parentId, baseName(f.name)), f.id]));
+  const videosByKey = new Set(videoIdByKey.keys());
+  // "01 - Intro resources" / "01 - Intro - Resources" / "Resources - 01 - Intro" next to "01 - Intro.mp4" → that lesson's material.
+  const lessonOfFolder = new Map<string, string>();
+  for (const f of tree.folders) {
+    if (!f.parentId) continue;
+    const base = normBase(f.name.replace(/^\s*resources?\s*[-_:–]\s*/i, "").replace(/\s*[-_:–(]?\s*(resources?|materials?|files|assets)\)?\s*$/i, ""));
+    const vid = videoIdByKey.get(videoKey(f.parentId, base));
+    if (vid && base !== normBase(f.name)) lessonOfFolder.set(f.id, vid);
+  }
+  const lessonFor = (folderId: string): string | null => {
+    for (let f = byId.get(folderId); f; f = f.parentId ? byId.get(f.parentId) : undefined) {
+      const v = lessonOfFolder.get(f.id);
+      if (v) return v;
+    }
+    return null;
+  };
   const captionsFor = new Map<string, PlanCaption[]>();
   const descFileFor = new Map<string, string>();
   const consumed = new Set<string>();
@@ -227,7 +244,7 @@ export function buildPlan(tree: Tree, existing: Existing = { moduleFolderIds: ne
       } else {
         // Unmatched subtitles are still kept, as downloadable resources.
         const resourceType: ResourceKind = c.kind === "subtitle" ? "other" : c.resourceType;
-        resources.push({ driveFileId: f.id, driveName: f.name, title: cleanTitle(f.name), resourceType, mimeType: f.mimeType, size: f.size ?? null, exists: existing.resourceFileIds.has(f.id), description: f.description?.trim() || null });
+        resources.push({ driveFileId: f.id, driveName: f.name, title: cleanTitle(f.name), resourceType, mimeType: f.mimeType, size: f.size ?? null, exists: existing.resourceFileIds.has(f.id), description: f.description?.trim() || null, lessonDriveFileId: lessonFor(f.parentId) });
       }
     }
     return {

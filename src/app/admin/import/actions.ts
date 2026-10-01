@@ -24,6 +24,20 @@ async function existingFor(ctx: AdminCtx, courseId: string | null): Promise<Exis
   };
 }
 
+const MIGRATION = "20261001100000_drive_import_captions.sql";
+/**
+ * The importer writes lesson_captions and course_resources.drive_name. If the migration that adds
+ * them hasn't been run, refuse up front instead of importing half a course.
+ */
+async function schemaError(ctx: AdminCtx): Promise<string | null> {
+  const [caps, res] = await Promise.all([
+    ctx.supabase.from("lesson_captions").select("id", { count: "exact", head: true }),
+    ctx.supabase.from("course_resources").select("drive_name").limit(1),
+  ]);
+  if (!caps.error && !res.error) return null;
+  return `DATABASE UPDATE NEEDED — run supabase/migrations/${MIGRATION} in the Supabase SQL editor, then scan again. Nothing was imported.`;
+}
+
 async function scan(ctx: AdminCtx, folderId: string, courseId: string | null) {
   const root = await getFolder(folderId);
   const tree = await scanTree({ id: root.id, name: root.name, description: root.description }, listFolder);
@@ -52,6 +66,8 @@ export async function scanDriveFolder(_prev: unknown, form: FormData): Promise<A
     if (!data) return { ok: false, error: "Course not found." };
     courseTitle = data.title;
   }
+  const schema = await schemaError(g.ctx);
+  if (schema) return { ok: false, error: schema };
   try {
     const plan = await scan(g.ctx, folderId, courseId);
     return { ok: true, data: { plan, folderId, courseId, courseTitle } };
@@ -100,6 +116,8 @@ export async function runDriveImport(_prev: unknown, form: FormData): Promise<Ac
   const excluded = new Set(form.getAll("exclude").map(String));
   const title = str(form, "title");
 
+  const schema = await schemaError(ctx);
+  if (schema) return { ok: false, error: schema };
   let plan: ImportPlan;
   try { plan = await scan(ctx, folderId, courseIdIn); } catch (e) { return { ok: false, error: driveErrorMessage(e) }; }
 
@@ -175,8 +193,14 @@ export async function runDriveImport(_prev: unknown, form: FormData): Promise<Ac
         sum.lessonsCreated += rows.length;
       }
       if (resources.length) {
+        // Attach "<lesson> resources" folder files to their lesson (lesson page shows them under that lesson only).
+        const lessonIdByDrive = new Map<string, string>();
+        if (moduleId && resources.some((r) => r.lessonDriveFileId)) {
+          const { data: ls } = await s.from("lessons").select("id,drive_file_id").eq("module_id", moduleId).not("drive_file_id", "is", null);
+          (ls ?? []).forEach((l) => lessonIdByDrive.set(l.drive_file_id as string, l.id as string));
+        }
         const rows = resources.map((r) => ({
-          course_id: courseId, module_id: moduleId, title: r.title.slice(0, 200), description: clip(r.description), resource_type: r.resourceType, drive_file_id: r.driveFileId,
+          course_id: courseId, module_id: moduleId, lesson_id: (r.lessonDriveFileId && lessonIdByDrive.get(r.lessonDriveFileId)) || null, title: r.title.slice(0, 200), description: clip(r.description), resource_type: r.resourceType, drive_file_id: r.driveFileId,
           drive_name: r.driveName, drive_mime_type: r.mimeType, drive_size: r.size, is_downloadable: true, is_published: false, order_index: nextResourceOrder++,
         }));
         const { error } = await s.from("course_resources").insert(rows);

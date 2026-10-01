@@ -61,6 +61,7 @@ Everything in the folder tree (up to 10 levels, 20,000 items) is imported as **u
 | Drive "Description" field of a file or folder | Description (a sidecar file wins) |
 | PDF, docs, slides, sheets, code, archives, images, audio, any other file | Downloadable resource (Google Docs/Slides export as PDF, Sheets as XLSX) |
 | Shortcuts | Resolved to their target (the target must be shared with the service account) |
+| `<lesson name> resources` folder next to `<lesson name>.mp4` | Resources attached to that lesson (shown under that lesson only) |
 | Skipped | `.DS_Store`/`Thumbs.db`, Google Forms/Sites/Maps/Apps Script, exact duplicates |
 
 Re-importing never overwrites: it adds new files, missing subtitles, and descriptions only where they are empty. If one module fails, the rest still import and the summary lists the failure — run the import again to retry.
