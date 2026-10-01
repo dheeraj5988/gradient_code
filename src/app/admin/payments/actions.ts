@@ -7,6 +7,7 @@ import { createServiceClient, serviceConfigured } from "@/lib/supabase/service";
 import { encryptSecret } from "@/lib/payments/crypto";
 import { loadPaymentConfig } from "@/lib/payments/config";
 import { PAYPUR_BASE } from "@/lib/payments/paypur";
+import { confirmOrder } from "@/lib/payments/order";
 import { requestOrigin } from "@/lib/payments/origin";
 
 /** Saves gateway settings. Key/salt are write-only: blank keeps the stored value. Secrets are never audited or echoed. */
@@ -116,4 +117,24 @@ export async function markOrderRefunded(_prev: unknown, form: FormData): Promise
   await audit(g.ctx, "order.refund", "order", id, "Marked order refunded and removed access", { note });
   revalidatePath("/admin", "layout");
   return { ok: true, data: null, message: "Marked as refunded; course access removed." };
+}
+
+/** Asks Paypur for the real status of a created/pending order and finalizes it if paid (same path as the callback). */
+export async function recheckOrder(_prev: unknown, form: FormData): Promise<ActionResult> {
+  const g = await requireAdminAction();
+  if ("denied" in g) return g.denied;
+  const id = str(form, "id");
+  if (!UUID_RE.test(id)) return { ok: false, error: "Invalid order." };
+  if (!serviceConfigured()) return { ok: false, error: "No Supabase server key on the server." };
+  const { data: o } = await createServiceClient().from("orders").select("provider_order_id,provider_txn_id,status").eq("id", id).maybeSingle();
+  if (!o?.provider_order_id) return { ok: false, error: "Order not found." };
+  if (!["created", "pending"].includes(o.status)) return { ok: false, error: `Order is already ${o.status}.` };
+  if (!o.provider_txn_id) return { ok: false, error: "Paypur never returned a transaction ID for this order (payment wasn't started)." };
+  const r = await confirmOrder(o.provider_order_id, null);
+  await audit(g.ctx, "order.recheck", "order", id, `Rechecked with gateway: ${r.status}`, { result: r.status });
+  revalidatePath("/admin/orders");
+  if (r.status === "paid") return { ok: true, data: null, message: "Paid — access granted." };
+  if (r.status === "failed") return { ok: true, data: null, message: "Gateway says the payment failed; order marked failed." };
+  if (r.status === "amount_mismatch") return { ok: false, error: "Gateway amount doesn't match this order — not granted. Check the Paypur dashboard." };
+  return { ok: false, error: "Still pending: Paypur hasn't confirmed this payment (or its status reply wasn't understood — see the [paypur] lines in Vercel logs)." };
 }

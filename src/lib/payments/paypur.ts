@@ -28,8 +28,10 @@ export function safeEqualHex(a: string, b: string) {
 
 const SUCCESS = new Set(["success", "successful", "completed", "complete", "paid", "captured", "credit"]);
 const FAILURE = new Set(["failed", "failure", "fail", "cancelled", "canceled", "rejected", "expired", "declined", "error"]);
-export const isSuccessStatus = (s: string) => SUCCESS.has(s.trim().toLowerCase());
-export const isFailureStatus = (s: string) => FAILURE.has(s.trim().toLowerCase());
+/** Normalises gateway spellings: "TXN_SUCCESS", "Success", "PAYMENT-FAILED" → success / failed. */
+const norm = (s: string) => s.trim().toLowerCase().replace(/^(txn|transaction|payment)[_\s-]*/, "").replace(/[_\s-]+(txn|transaction|payment)$/, "");
+export const isSuccessStatus = (s: string) => SUCCESS.has(norm(s));
+export const isFailureStatus = (s: string) => { const n = norm(s); return FAILURE.has(n) || /fail|cancel|expire|reject|declin/.test(n); };
 
 export type InitInput = { orderId: string; amount: number; surl: string; furl: string; productinfo: string; firstname: string; email: string; phone: string };
 export type InitResult = { ok: true; payUrl: string; txnId: string | null } | { ok: false; error: string };

@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CreditCard } from "lucide-react";
 import { AdminHeader, DataTable, Toolbar } from "@/components/admin/table";
-import { AdminForm, SubmitButton, TextInput } from "@/components/admin/form";
+import { ActionButton, AdminForm, SubmitButton, TextInput } from "@/components/admin/form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { profilesById } from "@/lib/admin/queries";
 import { parseList } from "@/lib/admin/util";
 import { formatPrice } from "@/lib/utils";
-import { markOrderRefunded } from "../payments/actions";
+import { markOrderRefunded, recheckOrder } from "../payments/actions";
 
 export const metadata = { title: "Orders" };
 
@@ -36,6 +36,8 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
               <summary className="cursor-pointer text-primary">Refund…</summary>
               <div className="mt-2 w-56"><AdminForm action={markOrderRefunded}><input type="hidden" name="id" value={o.id} /><TextInput name="note" label="Paypur refund reference" required /><SubmitButton variant="outline" size="sm" pendingText="Working…">Mark refunded</SubmitButton></AdminForm></div>
             </details>
+          ) : o.status === "pending" || o.status === "created" ? (
+            <ActionButton key="x" action={recheckOrder} hidden={{ id: o.id }} variant="outline" size="sm">Recheck with gateway</ActionButton>
           ) : null,
         ] }))}
         empty={<EmptyState icon={CreditCard} title="No orders yet" description="Orders appear here as soon as a student starts a payment." />}
