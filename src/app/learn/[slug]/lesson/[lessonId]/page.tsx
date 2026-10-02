@@ -14,8 +14,15 @@ import { formatDuration } from "@/lib/utils";
 import { toPlayerSource, type PlayerSource } from "@/lib/video";
 import { isDriveConfigured } from "@/lib/google-drive/client";
 
-export default async function LessonPage({ params }: { params: Promise<{ slug: string; lessonId: string }> }) {
+/** `?t=` from a note link: one non-negative whole number of seconds, capped at 24h; anything else is ignored. */
+function parseStartAt(t: string | string[] | undefined): number | undefined {
+  if (typeof t !== "string" || !/^\d{1,9}$/.test(t)) return undefined;
+  return Math.min(Number(t), 86_400);
+}
+
+export default async function LessonPage({ params, searchParams }: { params: Promise<{ slug: string; lessonId: string }>; searchParams: Promise<{ t?: string | string[] }> }) {
   const { slug, lessonId } = await params;
+  const startAt = parseStartAt((await searchParams).t);
   const ctx = await getLearningContext(slug);
   if (!ctx) notFound();
   const lesson = ctx.lessons.find((l) => l.id === lessonId);
@@ -79,7 +86,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
               </div>
             </div>
           ) : source ? (
-            <VideoPlayer key={lesson.id} source={source} lessonId={lesson.id} title={lesson.title} initialPosition={position} track={enrolled} courseHref={base} captions={captions} />
+            <VideoPlayer key={lesson.id} source={source} lessonId={lesson.id} title={lesson.title} initialPosition={position} track={enrolled} courseHref={base} captions={captions} startAt={startAt} />
           ) : lesson.type === "live" && content.join_url ? (
             <div className="grid min-h-48 place-items-center px-4 py-6 text-center text-on-media sm:min-h-64">
               <div>
@@ -139,7 +146,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                 label: `Notes${notes.length ? ` (${notes.length})` : ""}`,
                 content: enrolled ? (
                   <div className="space-y-4">
-                    <NotesManager slug={slug} courseId={ctx.course.id} lessonId={lesson.id} allowTimestamp={!!source} initial={notes} emptyText="No notes for this lesson yet." />
+                    <NotesManager slug={slug} courseId={ctx.course.id} lessonId={lesson.id} allowTimestamp={!!source} canSeek={source?.kind === "file" || (source?.kind === "iframe" && source.src.includes("youtube.com/embed/"))} initial={notes} emptyText="No notes for this lesson yet." />
                   </div>
                 ) : <p className="text-sm text-muted-foreground">Enroll to take notes.</p>,
               },

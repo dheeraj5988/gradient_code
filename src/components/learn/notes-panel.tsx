@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Clock, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { playerClock } from "./player-clock";
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const textareaClass = "w-full rounded-lg border border-input bg-background p-3 text-sm placeholder:text-subtle-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
-export function NoteItem({ slug, note, lessonTitle, lessonHref, onDeleted, onUpdated }: { slug: string; note: Note; lessonTitle?: string | null; lessonHref?: string | null; onDeleted?: (id: string) => void; onUpdated?: (n: Note) => void }) {
+export function NoteItem({ slug, note, lessonTitle, lessonHref, canSeekHere, timeHref, onDeleted, onUpdated }: { slug: string; note: Note; lessonTitle?: string | null; lessonHref?: string | null; canSeekHere?: boolean; timeHref?: string | null; onDeleted?: (id: string) => void; onUpdated?: (n: Note) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(note.content);
   const [pending, start] = useTransition();
@@ -18,7 +19,14 @@ export function NoteItem({ slug, note, lessonTitle, lessonHref, onDeleted, onUpd
     <li className="rounded-lg border border-border bg-background p-4">
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {lessonTitle ? (lessonHref ? <a href={lessonHref} className="font-medium text-primary hover:underline">{lessonTitle}</a> : <span className="font-medium text-foreground">{lessonTitle}</span>) : null}
-        {note.video_timestamp_seconds != null ? <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" aria-hidden />{fmt(note.video_timestamp_seconds)}</span> : null}
+        {note.video_timestamp_seconds != null ? (() => {
+          const ts = note.video_timestamp_seconds;
+          const label = <><Clock className="h-3 w-3" aria-hidden />{fmt(ts)}</>;
+          const action = "inline-flex min-h-11 items-center gap-1 rounded-md px-1.5 font-medium text-primary hover:underline";
+          if (canSeekHere) return <button type="button" aria-label={`Jump to ${fmt(ts)}`} onClick={() => { if (playerClock.lessonId === note.lesson_id) playerClock.seek?.(ts); }} className={action}>{label}</button>;
+          if (timeHref) return <Link href={timeHref} aria-label={`Open lesson at ${fmt(ts)}`} className={action}>{label}</Link>;
+          return <span className="inline-flex items-center gap-1">{label}</span>;
+        })() : null}
         <span>{new Date(note.updated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
         <span className="ml-auto flex gap-1">
           <button onClick={() => setEditing((v) => !v)} aria-label="Edit note" className="grid h-11 w-11 place-items-center rounded-md hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" /></button>
@@ -84,8 +92,8 @@ export function NewNoteForm({ slug, courseId, lessonId, allowTimestamp, onCreate
  * Notes editor + list kept in client state: adding, editing or deleting a note updates the list
  * in place instead of re-rendering the whole learning page.
  */
-export function NotesManager({ slug, courseId, lessonId, allowTimestamp, initial, lessonTitles, emptyText, newLabel }: {
-  slug: string; courseId: string; lessonId: string | null; allowTimestamp?: boolean; initial: Note[];
+export function NotesManager({ slug, courseId, lessonId, allowTimestamp, canSeek, initial, lessonTitles, emptyText, newLabel }: {
+  slug: string; courseId: string; lessonId: string | null; allowTimestamp?: boolean; canSeek?: boolean; initial: Note[];
   lessonTitles?: Record<string, string>; emptyText: string; newLabel?: string;
 }) {
   const [notes, setNotes] = useState(initial);
@@ -102,6 +110,8 @@ export function NotesManager({ slug, courseId, lessonId, allowTimestamp, initial
               note={n}
               lessonTitle={lessonTitles && n.lesson_id ? lessonTitles[n.lesson_id] ?? null : null}
               lessonHref={lessonTitles && n.lesson_id ? `/learn/${slug}/lesson/${n.lesson_id}` : null}
+              canSeekHere={!!canSeek && !!lessonId && n.lesson_id === lessonId}
+              timeHref={lessonTitles && n.lesson_id && n.video_timestamp_seconds != null ? `/learn/${slug}/lesson/${n.lesson_id}?t=${Math.floor(n.video_timestamp_seconds)}` : null}
               onDeleted={(id) => setNotes((l) => l.filter((x) => x.id !== id))}
               onUpdated={(u) => setNotes((l) => l.map((x) => (x.id === u.id ? u : x)))}
             />
