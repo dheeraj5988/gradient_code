@@ -3,7 +3,7 @@ import { CourseThumb } from "@/components/course-thumb";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import type { MyCourse } from "@/lib/data/queries";
 
-export function ProgressCard({ c }: { c: MyCourse }) {
+export function ProgressCard({ c, resume }: { c: MyCourse; resume?: { href: string; label: string } }) {
   const done = c.progress === 100;
   return (
     <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-card">
@@ -12,6 +12,7 @@ export function ProgressCard({ c }: { c: MyCourse }) {
         <h3 className="line-clamp-2 text-[15px] font-semibold">
           <Link href={`/learn/${c.slug}`} className="after:absolute after:inset-0 hover:text-primary">{c.title}</Link>
         </h3>
+        {resume ? <Link href={resume.href} className="relative z-10 line-clamp-2 text-sm font-medium text-primary hover:underline">{resume.label}</Link> : null}
         <div className="mt-auto">
           <ProgressBar value={c.progress} tone={done ? "success" : "primary"} label={`${c.title} progress`} size="sm" />
           <p className="mt-2 flex justify-between text-xs text-muted-foreground">

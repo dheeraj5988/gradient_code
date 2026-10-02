@@ -5,8 +5,11 @@ import { discountPercent, formatPrice } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Rating } from "@/components/rating";
 import { CourseThumb } from "@/components/course-thumb";
+import { WishlistButton } from "@/components/course/wishlist-button";
 
-export function CourseCard({ course, priority }: { course: Course; priority?: boolean }) {
+type Props = { course: Course; priority?: boolean; showWishlist?: boolean; signedIn?: boolean; saved?: boolean; refreshOnChange?: boolean };
+
+export function CourseCard({ course, priority, showWishlist, signedIn = false, saved = false, refreshOnChange }: Props) {
   const off = discountPercent(course.price, course.mrp);
   const meta = [
     course.includes.hours ? { icon: Clock, text: `${course.includes.hours}h` } : null,
@@ -16,6 +19,11 @@ export function CourseCard({ course, priority }: { course: Course; priority?: bo
   return (
     <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card transition-[box-shadow,transform] duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background hover:shadow-card motion-safe:[@media(hover:hover)]:hover:-translate-y-0.5">
       <CourseThumb src={course.thumbnail_url} title={course.title} track={course.track} priority={priority} />
+      {showWishlist ? (
+        <div className="absolute top-2 right-2 z-10">
+          <WishlistButton courseId={course.id} slug={course.slug} title={course.title} initialSaved={saved} signedIn={signedIn} refreshOnChange={refreshOnChange} />
+        </div>
+      ) : null}
       <div className="flex flex-1 flex-col p-4">
         <p className="text-xs font-medium text-primary">{course.track}</p>
         <h3 className="mt-1 line-clamp-2 text-base leading-snug font-semibold text-foreground sm:text-[15px]">

@@ -36,8 +36,9 @@ export default async function LearnOverview({ params, searchParams }: { params: 
   }
 
   const [practice, plan] = await Promise.all([getPractice(course.id, ctx.userId), getPlan(ctx.userId, course.id)]);
-  const next = ctx.nextLesson;
-  const nextModule = next ? ctx.modules.find((m) => m.id === next.module_id) : null;
+  const resume = ctx.resume;
+  const resumeLesson = resume ? ctx.lessons.find((l) => l.id === resume.lessonId) : null;
+  const nextModule = resumeLesson ? ctx.modules.find((m) => m.id === resumeLesson.module_id) : null;
   const remainingLessons = ctx.lessons.filter((l) => !ctx.completed.has(l.id));
   const remainingSecs = remainingLessons.reduce((s, l) => s + l.duration_seconds, 0);
   const schedule = plan
@@ -56,11 +57,11 @@ export default async function LearnOverview({ params, searchParams }: { params: 
       <section className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:p-6">
         <ProgressRing value={progress.percent} size={84} label={`Course ${progress.percent}% complete`} />
         <div className="min-w-0 flex-1">
-          {next ? (
+          {resume ? (
             <>
-              <p className="text-xs font-semibold tracking-wide text-subtle-foreground uppercase">{progress.completed ? "Continue learning" : "Start learning"}</p>
+              <p className="text-xs font-semibold tracking-wide text-subtle-foreground uppercase">{resume.updatedAt ? "Resume" : progress.completed ? "Continue learning" : "Start learning"}</p>
               <p className="mt-1 text-sm text-muted-foreground">{nextModule?.title}</p>
-              <h2 className="text-lg font-semibold">{next.title}</h2>
+              <h2 className="text-lg font-semibold">{resume.lessonTitle}</h2>
             </>
           ) : (
             <>
@@ -72,7 +73,7 @@ export default async function LearnOverview({ params, searchParams }: { params: 
             {progress.completed} of {progress.total} lessons complete{remainingSecs ? ` · ${formatDuration(remainingSecs)} remaining` : ""}
           </p>
         </div>
-        {next ? <ButtonLink href={`/learn/${slug}/lesson/${next.id}`}><PlayCircle className="h-4 w-4" aria-hidden />{progress.completed ? "Continue" : "Start"}</ButtonLink> : null}
+        {resume ? <ButtonLink href={`/learn/${slug}/lesson/${resume.lessonId}`}><PlayCircle className="h-4 w-4" aria-hidden />{resume.updatedAt ? "Resume" : progress.completed ? "Continue" : "Start"}</ButtonLink> : null}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">

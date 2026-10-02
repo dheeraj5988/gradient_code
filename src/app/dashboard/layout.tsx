@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { DashboardMobileNav } from "@/components/dashboard/dashboard-mobile-nav";
+import { getDisplayName } from "@/lib/data/profile";
 import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -11,7 +12,7 @@ export const viewport: Viewport = { viewportFit: "cover" };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
-  const name = (user?.user_metadata?.full_name as string) || user?.email || "Demo learner";
+  const name = await getDisplayName(user);
   const initials = name.split(/[\s@]/).map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
   return (
     <div className="gc-public min-h-dvh bg-surface lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">

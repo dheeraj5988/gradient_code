@@ -7,6 +7,8 @@ import type { PlayerSource } from "@/lib/video";
 import { playerClock } from "./player-clock";
 
 const SAVE_EVERY_MS = 15_000;
+const RATES = [0.75, 1, 1.25, 1.5, 1.75, 2] as const;
+const RATE_KEY = "gc-playback-rate-v1";
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 /**
@@ -25,6 +27,7 @@ export function VideoPlayer({
   track,
   courseHref,
   captions = [],
+  startAt,
 }: {
   source: NonNullable<PlayerSource>;
   lessonId: string;
@@ -33,12 +36,17 @@ export function VideoPlayer({
   track: boolean;
   courseHref?: string;
   captions?: { src: string; srcLang: string; label: string; default?: boolean }[];
+  /** Validated seconds from a note link (`?t=`). Overrides the saved resume position. */
+  startAt?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastSaved = useRef(0);
   const latest = useRef<{ t: number; d: number | null }>({ t: initialPosition, d: null });
-  const [resumed, setResumed] = useState(initialPosition > 5);
+  const [resumed, setResumed] = useState(initialPosition > 5 && startAt == null);
+  const pendingSeek = useRef<number | null>(startAt ?? null);
+  const firstStart = useRef<number | null>(startAt ?? (initialPosition > 5 ? initialPosition : null));
+  const [rate, setRate] = useState<number>(1);
   const [hasError, setHasError] = useState(false);
   const [loading, setLoading] = useState(source.kind === "file");
 
@@ -71,11 +79,67 @@ export function VideoPlayer({
   }, [persist]);
 
   const isYouTube = source.kind === "iframe" && source.src.includes("youtube.com/embed/");
+  const ytOrigin = (() => {
+    if (!isYouTube) return null;
+    try { return new URL(source.src).origin; } catch { return null; }
+  })();
+  const isFile = source.kind === "file";
+
+  /** Jump to `sec`. Never plays, pauses or completes anything; native files wait for metadata first. */
+  const seek = useCallback(
+    (sec: number) => {
+      if (!Number.isFinite(sec) || sec < 0) return;
+      if (isYouTube) {
+        if (ytOrigin) iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [sec, true] }), ytOrigin);
+        return;
+      }
+      const v = videoRef.current;
+      if (!v) return;
+      if (v.readyState >= 1) v.currentTime = Number.isFinite(v.duration) ? Math.min(sec, v.duration) : sec;
+      else pendingSeek.current = sec;
+    },
+    [isYouTube, ytOrigin]
+  );
+
+  // Register as the current player so notes can seek it; unregister only if still ours.
+  useEffect(() => {
+    if (!isFile && !isYouTube) return;
+    playerClock.lessonId = lessonId;
+    playerClock.seek = seek;
+    return () => {
+      if (playerClock.seek === seek) {
+        playerClock.seek = null;
+        playerClock.lessonId = null;
+      }
+    };
+  }, [lessonId, seek, isFile, isYouTube]);
+
+  // Query-only navigation on the same lesson (new ?t=) does not remount the player.
+  useEffect(() => {
+    if (startAt != null) seek(startAt);
+  }, [startAt, seek]);
+
+  // Device-local playback speed (native files only); read after mount to avoid hydration mismatch.
+  useEffect(() => {
+    try {
+      const saved = Number(window.localStorage.getItem(RATE_KEY));
+      if ((RATES as readonly number[]).includes(saved)) setRate(saved);
+    } catch {
+      /* storage unavailable: keep 1x */
+    }
+  }, []);
+  const applyRate = useCallback(() => {
+    if (videoRef.current) videoRef.current.playbackRate = rate;
+  }, [rate]);
+  useEffect(applyRate, [applyRate]);
 
   useEffect(() => {
     if (!isYouTube) return;
     const onMsg = (e: MessageEvent) => {
-      if (!/youtube(-nocookie)?\.com$/.test(new URL(e.origin).hostname)) return;
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      let host = "";
+      try { host = new URL(e.origin).hostname; } catch { return; }
+      if (!/^(www\.)?youtube(-nocookie)?\.com$/.test(host)) return;
       try {
         const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
         const info = data?.info;
@@ -97,7 +161,7 @@ export function VideoPlayer({
     const u = new URL(src);
     u.searchParams.set("enablejsapi", "1");
     if (typeof window !== "undefined") u.searchParams.set("origin", window.location.origin);
-    if (initialPosition > 5) u.searchParams.set("start", String(Math.floor(initialPosition)));
+    if (firstStart.current != null) u.searchParams.set("start", String(Math.floor(firstStart.current)));
     src = u.toString();
   }
 
@@ -146,6 +210,7 @@ export function VideoPlayer({
   }
 
   return (
+    <div>
     <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-media">
       {source.kind === "file" ? (
         <>
@@ -158,9 +223,14 @@ export function VideoPlayer({
             preload="metadata"
             className="h-full w-full object-contain"
             onLoadedMetadata={(e) => {
-              if (initialPosition > 5 && initialPosition < e.currentTarget.duration - 5) {
-                e.currentTarget.currentTime = initialPosition;
+              const v = e.currentTarget;
+              if (pendingSeek.current != null) {
+                v.currentTime = Number.isFinite(v.duration) ? Math.min(pendingSeek.current, v.duration) : pendingSeek.current;
+                pendingSeek.current = null;
+              } else if (initialPosition > 5 && initialPosition < v.duration - 5) {
+                v.currentTime = initialPosition;
               }
+              applyRate();
               setLoading(false);
             }}
             onCanPlay={() => setLoading(false)}
@@ -194,10 +264,7 @@ export function VideoPlayer({
           allowFullScreen
           onLoad={() => {
             if (isYouTube) {
-              iframeRef.current?.contentWindow?.postMessage(
-                JSON.stringify({ event: "listening", id: lessonId }),
-                "*"
-              );
+              if (ytOrigin) iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: lessonId }), ytOrigin);
             }
           }}
         />
@@ -210,6 +277,25 @@ export function VideoPlayer({
           Resumed at {fmt(initialPosition)} ✕
         </button>
       ) : null}
+    </div>
+    {source.kind === "file" ? (
+      <div className="mt-2 flex items-center justify-end gap-2 text-sm text-muted-foreground">
+        <label htmlFor={`rate-${lessonId}`}>Speed</label>
+        <select
+          id={`rate-${lessonId}`}
+          value={rate}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            if (!(RATES as readonly number[]).includes(next)) return;
+            setRate(next);
+            try { window.localStorage.setItem(RATE_KEY, String(next)); } catch { /* storage unavailable */ }
+          }}
+          className="h-11 rounded-lg border border-input bg-background px-2.5 text-base text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 lg:h-10 lg:text-sm"
+        >
+          {RATES.map((r) => <option key={r} value={r}>{r}×</option>)}
+        </select>
+      </div>
+    ) : null}
     </div>
   );
 }

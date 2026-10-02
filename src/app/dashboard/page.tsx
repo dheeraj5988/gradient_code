@@ -5,7 +5,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { getLearnerSummary, getMyCourses } from "@/lib/data/queries";
-import { getNextLessons, getPracticeSummaries } from "@/lib/data/learning";
+import { getPracticeSummaries, getResumeTargets } from "@/lib/data/learning";
+import { getDisplayName } from "@/lib/data/profile";
 import { getUser } from "@/lib/supabase/server";
 import { formatDuration } from "@/lib/utils";
 import { ProgressCard } from "./progress-card";
@@ -36,13 +37,20 @@ export default async function DashboardPage() {
   const user = await getUser();
   const uid = user?.id ?? null;
   const courses = await getMyCourses(uid);
-  const [summary, upNext, practice] = await Promise.all([getLearnerSummary(uid), getNextLessons(uid, courses), getPracticeSummaries(uid, courses.map((c) => c.id))]);
+  const [summary, upNext, practice] = await Promise.all([getLearnerSummary(uid), getResumeTargets(uid, courses), getPracticeSummaries(uid, courses.map((c) => c.id))]);
   const practiceRows = courses.filter((c) => practice.has(c.id)).map((c) => ({ c, ...practice.get(c.id)! }));
   const inProgress = courses.filter((c) => c.progress > 0 && c.progress < 100);
   const completed = courses.filter((c) => c.progress === 100).length;
-  const resume = inProgress[0] ?? courses.find((c) => c.progress < 100);
-  const resumeNext = upNext.find((u) => u.course.id === resume?.id);
-  const first = ((user?.user_metadata?.full_name as string) || "").split(" ")[0];
+  // Hero: the course with the newest incomplete watch activity (targets are sorted that way); if every
+  // course is finished, offer a review instead of a made-up next lesson.
+  const heroTarget = upNext[0];
+  const resume = heroTarget ? courses.find((c) => c.id === heroTarget.course.id) : courses[0];
+  const resumeLabel = !heroTarget ? (resume?.progress === 100 ? "Review course" : "Open course") : heroTarget.updatedAt ? "Resume" : resume?.progress ? "Continue" : "Start course";
+  const resumeFor = (id: string) => {
+    const t = upNext.find((u) => u.course.id === id);
+    return t ? { href: `/learn/${t.course.slug}/lesson/${t.lessonId}`, label: `${t.updatedAt ? "Resume" : "Next"}: ${t.lessonTitle}` } : undefined;
+  };
+  const first = user ? (await getDisplayName(user)).split(/[\s@]/)[0] : "";
 
   const stats = [
     { icon: BookOpen, label: "Enrolled", value: courses.length },
@@ -65,10 +73,10 @@ export default async function DashboardPage() {
           <div className="min-w-0 flex-1">
             <p id="continue" className="text-xs font-semibold tracking-wide text-subtle-foreground uppercase">Continue learning</p>
             <h2 className="mt-1 text-lg font-semibold">{resume.title}</h2>
-            {resumeNext ? <p className="mt-1 text-sm text-muted-foreground">Next: {resumeNext.lessonTitle}{resumeNext.duration ? ` · ${formatDuration(resumeNext.duration)}` : ""}</p> : null}
+            {heroTarget ? <p className="mt-1 text-sm text-muted-foreground">{heroTarget.updatedAt ? "Resume" : "Next"}: {heroTarget.lessonTitle}{heroTarget.duration ? ` · ${formatDuration(heroTarget.duration)}` : ""}</p> : null}
           </div>
-          <ButtonLink href={resumeNext ? `/learn/${resume.slug}/lesson/${resumeNext.lessonId}` : `/learn/${resume.slug}`}>
-            <PlayCircle className="h-4 w-4" aria-hidden />{resume.progress ? "Resume" : "Start course"}
+          <ButtonLink href={heroTarget ? `/learn/${resume.slug}/lesson/${heroTarget.lessonId}` : `/learn/${resume.slug}`}>
+            <PlayCircle className="h-4 w-4" aria-hidden />{resumeLabel}
           </ButtonLink>
         </section>
       ) : null}
@@ -93,7 +101,7 @@ export default async function DashboardPage() {
               {courses.length > 3 ? <Link href="/dashboard/courses" className="text-sm font-medium text-primary hover:underline">View all</Link> : null}
             </div>
             {courses.length ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{courses.slice(0, 3).map((c) => <ProgressCard key={c.id} c={c} />)}</div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{courses.slice(0, 3).map((c) => <ProgressCard key={c.id} c={c} resume={resumeFor(c.id)} />)}</div>
             ) : (
               <EmptyState icon={BookOpen} title="You haven't enrolled in a course yet" description="Browse the catalog and preview a lesson free." action={<ButtonLink href="/courses" size="sm">Explore courses</ButtonLink>} />
             )}
@@ -103,7 +111,7 @@ export default async function DashboardPage() {
           <Panel title="Up next">
             {upNext.length ? (
               <ul className="-my-3 divide-y divide-border">
-                {upNext.map((u) => (
+                {upNext.slice(0, 4).map((u) => (
                   <li key={u.course.id}>
                     <Link href={`/learn/${u.course.slug}/lesson/${u.lessonId}`} className="group flex items-center gap-3 py-3">
                       <PlayCircle className="h-5 w-5 shrink-0 text-subtle-foreground group-hover:text-primary" aria-hidden />

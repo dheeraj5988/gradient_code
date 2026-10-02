@@ -5,6 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { SectionHeader } from "@/components/ui/section";
+import { HeroCursorTint } from "@/components/marketing/hero-cursor-tint";
 import { CourseCard } from "@/components/course/course-card";
 import { getFeaturedCourses, getInstructors, getInternships, getTracks } from "@/lib/data/queries";
 import { CERTIFICATE_POINTS, FAQS, HOW_IT_WORKS } from "@/lib/content/site";
@@ -28,8 +29,9 @@ export default async function HomePage() {
   return (
     <>
       {/* 1. HERO */}
-      <section className="hero-tint border-b border-border bg-surface">
-        <div className="container-page grid gap-8 py-10 sm:gap-10 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12 lg:py-24">
+      <section className="hero-tint relative isolate overflow-hidden border-b border-border bg-surface">
+        <HeroCursorTint />
+        <div className="container-page relative z-10 grid gap-8 py-10 sm:gap-10 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12 lg:py-24">
           <div>
             <h1 className="text-[32px] leading-[1.12] font-bold tracking-tight text-balance sm:text-5xl lg:text-[56px] lg:leading-[1.08]">
               Learn practical skills. Build real projects. Get certified.
@@ -39,7 +41,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/courses" size="lg" className="w-full sm:w-auto">Explore courses</ButtonLink>
-              <ButtonLink href="/programs" size="lg" variant="outline" className="w-full sm:w-auto">Explore programs</ButtonLink>
+              <ButtonLink href="/courses#course-discovery" size="lg" variant="outline" className="w-full sm:w-auto">Find my course</ButtonLink>
             </div>
           </div>
 

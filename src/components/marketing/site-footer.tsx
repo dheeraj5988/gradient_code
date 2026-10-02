@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Logo } from "@/components/brand";
 
 const COLS = [
-  { title: "Learn", links: [["All courses", "/courses"], ["Programs", "/programs"], ["Projects", "/projects"], ["Resources", "/resources"], ["Pricing", "/pricing"]] },
-  { title: "Career", links: [["Internships", "/internships"], ["Verify a certificate", "/verify"]] },
+  { title: "Learn", links: [["All courses", "/courses"], ["Pricing", "/pricing"], ["Verify a certificate", "/verify"]] },
+  { title: "Career", links: [["Internships", "/internships"], ["Instructors", "/instructors"]] },
   { title: "Company", links: [["About", "/about"], ["Careers", "/careers"], ["Contact", "/contact"]] },
   { title: "Legal", links: [["Terms of use", "/terms"], ["Privacy policy", "/privacy"], ["Refund policy", "/refund"]] },
 ];

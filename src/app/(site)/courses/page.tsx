@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { X, SearchX } from "lucide-react";
+import { Search, X, SearchX } from "lucide-react";
 import { CatalogFilterSheet } from "@/components/course/catalog-filter-sheet";
 import { CourseCard } from "@/components/course/course-card";
 import { SortSelect } from "@/components/course/sort-select";
@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ButtonLink } from "@/components/ui/button";
 import { getCourses, getFacets } from "@/lib/data/queries";
+import { getWishlistIds } from "@/lib/data/wishlist";
+import { getUser } from "@/lib/supabase/server";
 import type { CourseFilters } from "@/lib/data/types";
 import { cn } from "@/lib/utils";
 
@@ -109,7 +111,9 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   // Back-compat for old links: ?crash=1
   if (sp.crash) sp.format = "short";
   const filters = Object.fromEntries(FILTER_KEYS.map((k) => [k, sp[k]])) as CourseFilters;
-  const [courses, facets] = await Promise.all([getCourses({ ...filters, sort: sp.sort as CourseFilters["sort"] }), getFacets()]);
+  const user = await getUser();
+  const [courses, facets, savedIds] = await Promise.all([getCourses({ ...filters, sort: sp.sort as CourseFilters["sort"] }), getFacets(), getWishlistIds(user?.id ?? null)]);
+  const saved = new Set(savedIds);
 
   const page = Math.max(1, Number(sp.page) || 1);
   const pages = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
@@ -124,6 +128,22 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
         <h1 className="text-3xl font-bold break-words [overflow-wrap:anywhere] sm:text-4xl">{title}</h1>
         <p className="mt-2 text-muted-foreground">Practical, project-based courses. Preview a lesson free before you buy.</p>
       </div>
+
+      {/* Catalog search: GET form keeps current filters and sort, resets pagination. */}
+      <form id="course-discovery" action="/courses" role="search" className="mb-8 flex scroll-mt-24 flex-col gap-2 sm:flex-row sm:items-end">
+        {[...FILTER_KEYS.filter((k) => k !== "q"), "sort"].map((k) => (sp[k] ? <input key={k} type="hidden" name={k} value={sp[k]} /> : null))}
+        <div className="min-w-0 flex-1">
+          <label htmlFor="catalog-q" className="mb-1.5 block text-sm font-medium">Search courses</label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 h-5 w-5 -translate-y-1/2 text-subtle-foreground" aria-hidden />
+            <input id="catalog-q" name="q" type="search" defaultValue={sp.q ?? ""} placeholder="Search by skill or topic, e.g. Python, React, SQL" autoComplete="off" className="h-11 w-full rounded-lg border border-input bg-background pr-4 pl-11 text-base placeholder:text-subtle-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button type="submit" className="h-11 flex-1 rounded-lg bg-primary px-6 font-semibold text-primary-foreground hover:bg-primary-hover sm:flex-none">Search</button>
+          {sp.q ? <Link href={href(sp, { q: undefined })} className="inline-flex h-11 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium hover:bg-surface">Clear search</Link> : null}
+        </div>
+      </form>
 
       <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
         {/* Desktop filters */}
@@ -159,7 +179,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
 
           {visible.length ? (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {visible.map((c, i) => <CourseCard key={c.id} course={c} priority={i < 3} />)}
+              {visible.map((c, i) => <CourseCard key={c.id} course={c} priority={i < 3} showWishlist signedIn={!!user} saved={saved.has(c.id)} />)}
             </div>
           ) : (
             <EmptyState

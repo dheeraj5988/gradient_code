@@ -349,3 +349,31 @@ details[open] > :not(summary) {
     backdrop-filter: none;
   }
 }
+
+/* Home hero cursor tint — fine-pointer desktop only (see CLAUDE.md design rules). */
+:root {
+  --gc-pointer-tint: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+@media screen {
+  html.dark { --gc-pointer-tint: color-mix(in srgb, var(--primary) 10%, transparent); }
+}
+.gc-public .gc-cursor-tint { display: none; }
+@media screen and (min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .gc-public .gc-cursor-tint {
+    display: block;
+    position: absolute;
+    z-index: 0;
+    left: -15rem;
+    top: -15rem;
+    width: 30rem;
+    height: 30rem;
+    opacity: 0;
+    background: radial-gradient(circle, var(--gc-pointer-tint), transparent 68%);
+    transform: translate3d(var(--gc-pointer-x, 0px), var(--gc-pointer-y, 0px), 0);
+    transition: opacity 180ms var(--gc-ease);
+  }
+  .gc-public .gc-cursor-tint[data-active="true"] { opacity: 1; }
+}
+@media (forced-colors: active) {
+  .gc-public .gc-cursor-tint { display: none; }
+}
