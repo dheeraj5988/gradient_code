@@ -31,9 +31,33 @@ export type LearningContext = {
   completed: Set<string>;
   progress: { total: number; completed: number; percent: number; modules: ModuleProgress[] };
   nextLesson: OutlineLesson | null;
+  resume: ResumeTarget | null;
 };
 
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
+
+/** Where to resume a course: the last-watched incomplete lesson, else the first unfinished one. Plain, serializable. */
+export type ResumeTarget = { lessonId: string; lessonTitle: string; duration: number; updatedAt: string | null; positionSeconds: number };
+type WatchedRow = { lesson_id: string; position_seconds: number; updated_at: string };
+
+/** Own watched positions (> 0s) for the given lessons, newest first. One query; RLS limits rows to the user. */
+async function getWatchedRows(userId: string | null, lessonIds: string[]): Promise<WatchedRow[]> {
+  if (IS_DEMO || !userId || !lessonIds.length) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from("video_progress").select("lesson_id,position_seconds,updated_at").eq("user_id", userId).gt("position_seconds", 0).in("lesson_id", lessonIds).order("updated_at", { ascending: false });
+  return (data ?? []) as WatchedRow[];
+}
+
+/** `lessons` is the safe published outline; completed lessons are never resumed. */
+function pickResume(lessons: OutlineLesson[], done: Set<string>, watched: WatchedRow[]): ResumeTarget | null {
+  const byId = new Map(lessons.map((l) => [l.id, l]));
+  for (const w of watched) {
+    const l = byId.get(w.lesson_id);
+    if (l && !done.has(l.id)) return { lessonId: l.id, lessonTitle: l.title, duration: l.duration_seconds, updatedAt: w.updated_at, positionSeconds: w.position_seconds };
+  }
+  const next = lessons.find((l) => !done.has(l.id));
+  return next ? { lessonId: next.id, lessonTitle: next.title, duration: next.duration_seconds, updatedAt: null, positionSeconds: 0 } : null;
+}
 
 /** Public, safe curriculum outline (no media URLs / text). */
 export const getOutline = cache(async (courseId: string): Promise<OutlineModule[]> => {
@@ -86,7 +110,9 @@ export const getLearningContext = cache(async (slug: string): Promise<LearningCo
   const userId = IS_DEMO ? "demo" : (user?.id ?? null);
   const [modules, enrolled] = await Promise.all([getOutline(course.id), hasCourseAccess(course.id, userId)]);
   const lessons = modules.flatMap((m) => m.lessons);
-  const completed = enrolled ? await getCompletedLessons(userId, lessons.map((l) => l.id)) : new Set<string>();
+  const lessonIds = lessons.map((l) => l.id);
+  const completed = enrolled ? await getCompletedLessons(userId, lessonIds) : new Set<string>();
+  const resume = enrolled ? pickResume(lessons, completed, await getWatchedRows(userId, lessonIds)) : null;
   return {
     course,
     userId,
@@ -96,6 +122,7 @@ export const getLearningContext = cache(async (slug: string): Promise<LearningCo
     completed,
     progress: computeProgress(modules, completed),
     nextLesson: lessons.find((l) => !completed.has(l.id)) ?? null,
+    resume,
   };
 });
 
@@ -385,16 +412,21 @@ export function buildPlan(opts: { remainingLessons: OutlineLesson[]; remainingQu
   return { days, onTrack: totalMinutes <= budget * daysLeft, daysLeft };
 }
 
-/** Next unfinished lesson for several enrolled courses (dashboard "Up next"). Batched: 1 outline RPC per course + 1 progress query. */
-export async function getNextLessons(userId: string | null, courses: { id: string; slug: string; title: string; progress: number }[]) {
-  const active = courses.filter((c) => c.progress < 100).slice(0, 4);
+/**
+ * Resume target per enrolled, unfinished course (dashboard + My courses). Batched: one outline RPC per course
+ * (deduplicated by cache()), one completion query and one own-video-progress query. Courses with recent watch
+ * activity come first, newest first; the rest keep the order given.
+ */
+export async function getResumeTargets(userId: string | null, courses: { id: string; slug: string; title: string; progress: number }[]) {
+  const active = courses.filter((c) => c.progress < 100).slice(0, 8);
   const outlines = await Promise.all(active.map((c) => getOutline(c.id)));
   const allIds = outlines.flatMap((o) => o.flatMap((m) => m.lessons.map((l) => l.id)));
-  const done = await getCompletedLessons(userId, allIds);
-  return active.flatMap((c, i) => {
-    const next = outlines[i].flatMap((m) => m.lessons).find((l) => !done.has(l.id));
-    return next ? [{ course: c, lessonId: next.id, lessonTitle: next.title, duration: next.duration_seconds }] : [];
+  const [done, watched] = await Promise.all([getCompletedLessons(userId, allIds), getWatchedRows(userId, allIds)]);
+  const targets = active.flatMap((c, i) => {
+    const target = pickResume(outlines[i].flatMap((m) => m.lessons), done, watched);
+    return target ? [{ course: c, ...target }] : [];
   });
+  return targets.sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
 }
 
 /* ------------------------------ Coding problems ------------------------------ */

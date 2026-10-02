@@ -248,16 +248,13 @@ export async function getMyCourses(userId: string | null): Promise<MyCourse[]> {
     .map((e) => e.course_id);
   if (!ids.length) return [];
   const { data: rows } = await supabase.from("courses").select("*").in("id", ids);
-  const { data: mods } = await supabase.from("course_modules").select("id,course_id").in("course_id", ids);
-  const modIds = (mods ?? []).map((m) => m.id);
-  const { data: lessons } = modIds.length
-    ? await supabase.from("lessons").select("id,module_id").in("module_id", modIds)
-    : { data: [] as { id: string; module_id: string }[] };
-  const { data: done } = await supabase.from("lesson_progress").select("lesson_id").eq("user_id", userId);
+  // Count only lessons the portal itself shows (published outline), so dashboard and portal totals agree.
+  const outlines = await Promise.all(ids.map((id) => supabase.rpc("course_outline", { _course_id: id })));
+  const lessonsByCourse = new Map(ids.map((id, i) => [id, (outlines[i].data ?? []) as { id: string }[]]));
+  const { data: done } = await supabase.from("lesson_progress").select("lesson_id").eq("user_id", userId).in("lesson_id", [...lessonsByCourse.values()].flat().map((l) => l.id));
   const doneSet = new Set((done ?? []).map((d) => d.lesson_id));
   return (rows ?? []).map((r) => {
-    const courseMods = new Set((mods ?? []).filter((m) => m.course_id === r.id).map((m) => m.id));
-    const ls = (lessons ?? []).filter((l) => courseMods.has(l.module_id));
+    const ls = lessonsByCourse.get(r.id) ?? [];
     const completed = ls.filter((l) => doneSet.has(l.id)).length;
     return { ...mapCourse(r), total: ls.length, completed, progress: ls.length ? Math.round((completed / ls.length) * 100) : 0 };
   });
