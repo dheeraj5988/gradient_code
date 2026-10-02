@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Award, Bookmark, BookOpen, ListChecks, Briefcase, CheckCircle2, ChevronDown, Circle, Code2, FileText, FolderGit2, Lock, MessagesSquare, NotebookPen, PlayCircle, Radio, LayoutGrid } from "lucide-react";
+import { Award, Search, X, Bookmark, BookOpen, ListChecks, Briefcase, CheckCircle2, ChevronDown, Circle, Code2, FileText, FolderGit2, Lock, MessagesSquare, NotebookPen, PlayCircle, Radio, LayoutGrid } from "lucide-react";
 import { cn, formatDuration } from "@/lib/utils";
 
 export type SidebarModule = {
@@ -38,14 +39,51 @@ export function CourseSidebar({ slug, modules, enrolled, practiceCount, intervie
   const base = `/learn/${slug}`;
   const is = (p: string) => path === p || path.startsWith(p + "/");
   const currentLesson = path.startsWith(`${base}/lesson/`) ? path.split("/").pop() : null;
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLocaleLowerCase();
+  // Keep each module's original index and progress totals; only the lesson list is filtered.
+  const shown = modules.flatMap((m, index) => {
+    if (!m.lessons.length) return [];
+    if (!q) return [{ m, index, lessons: m.lessons }];
+    const lessons = m.title.toLocaleLowerCase().includes(q) ? m.lessons : m.lessons.filter((l) => l.title.toLocaleLowerCase().includes(q));
+    return lessons.length ? [{ m, index, lessons }] : [];
+  });
+  const matchCount = shown.reduce((n, x) => n + x.lessons.length, 0);
 
   return (
     <nav aria-label="Course navigation" className="divide-y divide-border">
       <Group title="Course">
         <NavLink href={base} icon={LayoutGrid} label="Overview" active={path === base} />
+        {modules.some((m) => m.lessons.length) ? (
+          <div className="relative mt-2">
+            <label htmlFor="lesson-search" className="sr-only">Search lessons</label>
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-subtle-foreground" aria-hidden />
+            <input
+              id="lesson-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search lessons"
+              autoComplete="off"
+              className="h-11 w-full rounded-lg border border-input bg-background pr-10 pl-9 text-base text-foreground placeholder:text-subtle-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 lg:h-10 lg:text-sm"
+            />
+            {query ? (
+              <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute top-1/2 right-0.5 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:text-foreground lg:h-10 lg:w-10">
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        <p role="status" className="sr-only">{q ? `${matchCount} ${matchCount === 1 ? "lesson" : "lessons"} found` : ""}</p>
+        {q && !shown.length ? (
+          <div className="px-2.5 py-3 text-sm text-muted-foreground">
+            <p>No lessons found. Try another keyword.</p>
+            <button type="button" onClick={() => setQuery("")} className="mt-1 inline-flex min-h-11 items-center font-medium text-primary hover:underline">Clear search</button>
+          </div>
+        ) : null}
         <div className="mt-1 space-y-1">
-          {modules.map((m, i) => {
-            const open = m.lessons.some((l) => l.id === currentLesson);
+          {shown.map(({ m, index: i, lessons }) => {
+            const open = m.lessons.some((l) => l.id === currentLesson) || !!q;
             return (
               <details key={m.id} open={open || undefined} className="group rounded-md">
                 <summary className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md px-2.5 py-2 hover:bg-surface-2">
@@ -57,7 +95,7 @@ export function CourseSidebar({ slug, modules, enrolled, practiceCount, intervie
                   {enrolled && m.total && m.completed === m.total ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-label="Module complete" /> : null}
                 </summary>
                 <ul className="mt-0.5 mb-1 ml-4 border-l border-border pl-2">
-                  {m.lessons.map((l) => {
+                  {lessons.map((l) => {
                     const locked = !enrolled && !l.is_free_preview;
                     const current = l.id === currentLesson;
                     const Type = l.type === "text" ? FileText : l.type === "live" ? Radio : PlayCircle;
