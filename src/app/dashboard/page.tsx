@@ -6,6 +6,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { getLearnerSummary, getMyCourses } from "@/lib/data/queries";
 import { getPracticeSummaries, getResumeTargets } from "@/lib/data/learning";
+import { getDisplayName } from "@/lib/data/profile";
 import { getUser } from "@/lib/supabase/server";
 import { formatDuration } from "@/lib/utils";
 import { ProgressCard } from "./progress-card";
@@ -49,7 +50,7 @@ export default async function DashboardPage() {
     const t = upNext.find((u) => u.course.id === id);
     return t ? { href: `/learn/${t.course.slug}/lesson/${t.lessonId}`, label: `${t.updatedAt ? "Resume" : "Next"}: ${t.lessonTitle}` } : undefined;
   };
-  const first = ((user?.user_metadata?.full_name as string) || "").split(" ")[0];
+  const first = user ? (await getDisplayName(user)).split(/[\s@]/)[0] : "";
 
   const stats = [
     { icon: BookOpen, label: "Enrolled", value: courses.length },
