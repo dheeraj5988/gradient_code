@@ -20,6 +20,7 @@ Gradient Code is an Indian EdTech platform. It sells video courses (Hinglish, ho
 - `rounded-lg` for controls, `rounded-xl` for cards, `rounded-full` only for pills/avatars.
 - Use `shadow-sm` / `shadow-card` only. No glow, blobs, gradient text or decorative/looping animation.
 - **Public/learner pages only** (wrapped in `.gc-public`): restrained glass via the `glass` / `glass-strong` utilities on structural bars and sheets (header, drawers, buy bar), one static `hero-tint`, `shadow-elevated` for sheets, 44px touch targets and 16px inputs (applied by scoped CSS). Cards, forms, prose and video stay opaque. Admin never uses `.gc-public`.
+- **Narrow exception to "no decorative animation":** the home hero may show one event-driven primary-blue cursor tint (`hero-cursor-tint.tsx`). It mounts only on `(min-width:1024px) and (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference)`, has no idle animation loop, and is hidden in forced-colors. Admin, auth, checkout and the learner player never get it. Do not extend it site-wide.
 - Mobile overlays use `src/components/ui/mobile-sheet.tsx` (native `<dialog>`); never hand-roll a modal `<div>`.
 - Reuse `src/components/ui`: Button, Badge, Input, Skeleton, EmptyState, ErrorState, ProgressBar, ProgressRing, Breadcrumbs, Tabs, Accordion.
 - Every data screen has loading, empty and error states.
