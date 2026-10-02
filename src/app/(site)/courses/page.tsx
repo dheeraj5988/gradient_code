@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ButtonLink } from "@/components/ui/button";
 import { getCourses, getFacets } from "@/lib/data/queries";
+import { getWishlistIds } from "@/lib/data/wishlist";
+import { getUser } from "@/lib/supabase/server";
 import type { CourseFilters } from "@/lib/data/types";
 import { cn } from "@/lib/utils";
 
@@ -109,7 +111,9 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   // Back-compat for old links: ?crash=1
   if (sp.crash) sp.format = "short";
   const filters = Object.fromEntries(FILTER_KEYS.map((k) => [k, sp[k]])) as CourseFilters;
-  const [courses, facets] = await Promise.all([getCourses({ ...filters, sort: sp.sort as CourseFilters["sort"] }), getFacets()]);
+  const user = await getUser();
+  const [courses, facets, savedIds] = await Promise.all([getCourses({ ...filters, sort: sp.sort as CourseFilters["sort"] }), getFacets(), getWishlistIds(user?.id ?? null)]);
+  const saved = new Set(savedIds);
 
   const page = Math.max(1, Number(sp.page) || 1);
   const pages = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
@@ -175,7 +179,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
 
           {visible.length ? (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {visible.map((c, i) => <CourseCard key={c.id} course={c} priority={i < 3} />)}
+              {visible.map((c, i) => <CourseCard key={c.id} course={c} priority={i < 3} showWishlist signedIn={!!user} saved={saved.has(c.id)} />)}
             </div>
           ) : (
             <EmptyState

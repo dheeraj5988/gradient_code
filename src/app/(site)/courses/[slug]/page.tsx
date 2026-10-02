@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Award, BadgeCheck, Briefcase, Check, Clock, Download, FileText, FolderGit2, Globe, Heart, Infinity as InfinityIcon, PlayCircle, RefreshCw, Smartphone, Users } from "lucide-react";
+import { Award, BadgeCheck, Briefcase, Check, Clock, Download, FileText, FolderGit2, Globe, Infinity as InfinityIcon, PlayCircle, RefreshCw, Smartphone, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { buttonClass, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Rating } from "@/components/rating";
@@ -14,8 +14,8 @@ import { CourseCard } from "@/components/course/course-card";
 import { MobileBuyBar } from "@/components/course/mobile-buy-bar";
 import { getCourseBySlug, getCurriculum, getInstructor, getInternships, getRelatedCourses, getReviews, isEnrolled, isWishlisted } from "@/lib/data/queries";
 import { getUser } from "@/lib/supabase/server";
-import { cn, discountPercent, formatCount, formatDuration, formatPrice } from "@/lib/utils";
-import { toggleWishlist } from "./actions";
+import { discountPercent, formatCount, formatDuration, formatPrice } from "@/lib/utils";
+import { WishlistButton } from "@/components/course/wishlist-button";
 
 type Params = Promise<{ slug: string }>;
 
@@ -159,11 +159,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
                   <ButtonLink href={ctaHref} size="lg" className="hidden w-full lg:inline-flex">{ctaLabel}</ButtonLink>
                   <div className="grid grid-cols-[1fr_auto] gap-2">
                     {preview ? <ButtonLink href={`/learn/${course.slug}/lesson/${preview.id}`} variant="outline" className="w-full">Preview</ButtonLink> : <span />}
-                    <form action={toggleWishlist.bind(null, course.id, course.slug, saved)}>
-                      <button aria-pressed={saved} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} className={buttonClass({ variant: "outline" }, "w-11 px-0")}>
-                        <Heart className={cn("h-4 w-4", saved && "fill-danger text-danger")} aria-hidden />
-                      </button>
-                    </form>
+                    <WishlistButton variant="detail" courseId={course.id} slug={course.slug} title={course.title} initialSaved={saved} signedIn={!!user} />
                   </div>
                 </div>
               )}

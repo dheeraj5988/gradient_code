@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, BookOpen, Briefcase, Compass, LayoutDashboard, Share2, UserRound } from "lucide-react";
+import { Award, BookOpen, Briefcase, Compass, Heart, LayoutDashboard, Share2, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/courses", label: "My courses", icon: BookOpen },
+  { href: "/dashboard/wishlist", label: "Saved courses", icon: Heart },
   { href: "/dashboard/certificates", label: "Certificates", icon: Award },
   { href: "/dashboard/applications", label: "Applications", icon: Briefcase },
   { href: "/dashboard/referrals", label: "Refer & earn", icon: Share2 },
