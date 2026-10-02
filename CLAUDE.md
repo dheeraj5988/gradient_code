@@ -58,6 +58,7 @@ Gradient Code is an Indian EdTech platform. It sells video courses (Hinglish, ho
 - No public or "anyone with the link" Drive folders or videos.
 - No "Open in Drive" links or Drive URLs for paid content.
 - No secrets in the repo (`.env*` is git-ignored; `.env.example` holds names only).
+- No broad grants on `public.profiles` to `authenticated`: learners may UPDATE only `full_name`, `phone`, `bio` (column grants) and may not INSERT. A new learner-editable column needs its own migration with an explicit `GRANT UPDATE (col)`.
 - No direct client inserts or updates on `orders`, `enrollments`, `certificates` or `internship_applications`. Those go through RPCs or the service role only.
 
 ## Pointers
