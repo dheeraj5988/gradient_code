@@ -8,7 +8,7 @@ import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireAdminPage } from "@/lib/admin/guard";
 
-export const metadata: Metadata = { title: { default: "Admin", template: "%s · Admin | Gradient Code" }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: { default: "Admin", template: "%s · Admin | Code Gradient" }, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

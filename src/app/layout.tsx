@@ -8,14 +8,14 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: { default: "Gradient Code — Practical courses, projects and internships", template: "%s | Gradient Code" },
+  title: { default: "Code Gradient — Practical courses, projects and internships", template: "%s | Code Gradient" },
   description: "Industry-oriented courses and programs that help students build practical technical skills and prove them through projects and assessments.",
   alternates: { canonical: "/" },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "48x48" }],
+    apple: "/apple-icon.png",
   },
-  openGraph: { siteName: "Gradient Code", type: "website", locale: "en_IN" },
+  openGraph: { siteName: "Code Gradient", type: "website", locale: "en_IN" },
   twitter: { card: "summary_large_image" },
 };
 

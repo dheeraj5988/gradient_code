@@ -1,6 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#2563EB"/>
-  <rect x="8" y="17" width="4" height="7" rx="1" fill="#ffffff" opacity="0.65"/>
-  <rect x="14" y="12" width="4" height="12" rx="1" fill="#ffffff" opacity="0.85"/>
-  <rect x="20" y="7" width="4" height="17" rx="1" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-21 50 720 720"><defs>
+    <linearGradient id="body" gradientUnits="userSpaceOnUse" x1="40" y1="520" x2="400" y2="150">
+      <stop offset="0" stop-color="#00cfff"/><stop offset=".45" stop-color="#1089ff"/><stop offset="1" stop-color="#1a4dff"/>
+    </linearGradient>
+    <linearGradient id="arm" gradientUnits="userSpaceOnUse" x1="370" y1="90" x2="590" y2="260">
+      <stop offset="0" stop-color="#17a2ff"/><stop offset="1" stop-color="#7a5cff"/>
+    </linearGradient>
+    <linearGradient id="top" gradientUnits="userSpaceOnUse" x1="345" y1="420" x2="640" y2="450">
+      <stop offset="0" stop-color="#a72cff"/><stop offset="1" stop-color="#e03cff"/>
+    </linearGradient>
+    <linearGradient id="side" gradientUnits="userSpaceOnUse" x1="640" y1="470" x2="500" y2="690">
+      <stop offset="0" stop-color="#d93bff"/><stop offset="1" stop-color="#9a22ff"/>
+    </linearGradient>
+    <linearGradient id="dark" gradientUnits="userSpaceOnUse" x1="375" y1="600" x2="500" y2="750">
+      <stop offset="0" stop-color="#2a14ff"/><stop offset="1" stop-color="#3b12e8"/>
+    </linearGradient>
+  </defs>
+  <g stroke-linejoin="round" stroke-width="22">
+    <polygon points="378,70 378,208 178,330 178,470 384,596 384,750 48,544 48,276" fill="url(#body)" stroke="url(#body)"/>
+    <polygon points="378,70 592,205 485,272 378,208" fill="url(#arm)" stroke="url(#arm)"/>
+    <polygon points="354,420 470,352 628,450 500,528" fill="url(#top)" stroke="url(#top)"/>
+    <polygon points="500,530 630,456 630,598 500,684" fill="url(#side)" stroke="url(#side)"/>
+    <polygon points="384,602 500,534 500,684 384,750" fill="url(#dark)" stroke="url(#dark)"/>
+  </g>
+
 </svg>

@@ -185,7 +185,7 @@ export default async function HomePage() {
       {/* 8. HOW IT WORKS */}
       <section className="border-y border-border bg-surface py-14">
         <div className="container-page">
-          <SectionHeader title="How Gradient Code works" description="Every course follows the same path from learning to real-world experience." />
+          <SectionHeader title="How Code Gradient works" description="Every course follows the same path from learning to real-world experience." />
           <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {HOW_IT_WORKS.map((s, i) => {
               const Icon = [BookOpen, Code2, FolderGit2, Award, Briefcase][i];

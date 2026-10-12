@@ -21,7 +21,7 @@ export async function getSitePage(slug: string): Promise<SitePage | null> {
 
 /** Fills {{placeholders}} from site settings. Missing values become "[to be confirmed]" — never invented. */
 export function fillPlaceholders(md: string, s: SiteSettings | null) {
-  const company = s?.company_name || "Gradient Code";
+  const company = s?.company_name || "Code Gradient";
   const map: Record<string, string | null | undefined> = {
     company_name: company,
     legal_name: s?.legal_name || company,

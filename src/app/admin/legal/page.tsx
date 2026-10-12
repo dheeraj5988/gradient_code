@@ -21,7 +21,7 @@ export default async function LegalAdmin() {
         <h2 className="mb-4 text-sm font-semibold">Business details</h2>
         <AdminForm action={saveSiteSettings}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextInput name="company_name" label="Brand name" defaultValue={s?.company_name} placeholder="Gradient Code" />
+            <TextInput name="company_name" label="Brand name" defaultValue={s?.company_name} placeholder="Code Gradient" />
             <TextInput name="legal_name" label="Registered / legal name" defaultValue={s?.legal_name} hint="Shown as the operator in the terms" />
             <TextInput name="support_email" label="Support email" type="email" defaultValue={s?.support_email} />
             <TextInput name="support_phone" label="Support phone" defaultValue={s?.support_phone} />

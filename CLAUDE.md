@@ -1,6 +1,6 @@
-# Gradient Code — project memory for Claude
+# Code Gradient — project memory for Claude
 
-Gradient Code is an Indian EdTech platform. It sells video courses (Hinglish, hosted privately on Google Drive), and gives learners a learning portal with progress, practice questions, notes and resources. It also runs certificates (server-side eligibility, public verification), internships (certificate-gated applications with an admin pipeline), referrals (commission ledger and payouts) and Paypur UPI payments. Admins manage everything through an in-app CMS that includes a Google Drive importer.
+Code Gradient (formerly Gradient Code) is an Indian EdTech platform. It sells video courses (Hinglish, hosted privately on Google Drive), and gives learners a learning portal with progress, practice questions, notes and resources. It also runs certificates (server-side eligibility, public verification), internships (certificate-gated applications with an admin pipeline), referrals (commission ledger and payouts) and Paypur UPI payments. Admins manage everything through an in-app CMS that includes a Google Drive importer.
 
 **Stack (do not change without asking):** Next.js 15 App Router · React 19 · TypeScript strict · Tailwind CSS v4 · Supabase (`@supabase/ssr`) · Paypur (UPI) payments · Vercel · lucide-react · `@fontsource-variable/inter` + `jetbrains-mono`. No UI library: use `src/components/ui/*`.
 

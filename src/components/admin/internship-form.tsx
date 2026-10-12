@@ -9,7 +9,7 @@ export function InternshipForm({ i, courses }: { i?: any; courses: { id: string;
       <section className="grid gap-4 rounded-xl border border-border bg-card p-5 md:grid-cols-2">
         <div className="md:col-span-2"><TextInput name="title" label="Title" required defaultValue={i?.title} /></div>
         <TextInput name="slug" label="Slug" defaultValue={i?.slug} hint="Public URL: /internships/slug" />
-        <TextInput name="company" label="Company" defaultValue={i?.company ?? "Gradient Code"} />
+        <TextInput name="company" label="Company" defaultValue={i?.company ?? "Code Gradient"} />
         <SelectInput name="mode" label="Mode" required defaultValue={i?.mode ?? "Remote"} options={[["Remote", "Remote"], ["Hybrid", "Hybrid"], ["On-site", "On-site"]]} />
         <TextInput name="location" label="Location" defaultValue={i?.location ?? "Remote"} />
         <TextInput name="duration_weeks" label="Duration (weeks)" type="number" min={1} step="1" defaultValue={i?.duration_weeks ?? 8} />

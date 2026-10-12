@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Gradient Code design system — light-first, professional EdTech.
+ * Code Gradient design system — light-first, professional EdTech.
  * Source: docs/PRODUCT_SPEC.md → VISUAL DESIGN / DESIGN TOKENS.
  * Never hardcode colours in components; use these tokens.
  */
@@ -70,6 +70,10 @@
   --primary-soft: #eff6ff;
   --primary-foreground: #ffffff;
 
+  /* Logo wordmark only (not a site-wide gradient) */
+  --brand-from: #1670ff;
+  --brand-to: #8a2cff;
+
   --success: #15803d;
   --success-soft: #f0fdf4;
   --warning: #b45309;
@@ -101,6 +105,9 @@
     --primary-hover: #93c5fd;
     --primary-soft: #15243d;
     --primary-foreground: #0b1120;
+
+    --brand-from: #3d8bff;
+    --brand-to: #b04dff;
 
     --success: #4ade80;
     --success-soft: #0f2a1c;
@@ -252,6 +259,15 @@ details[open] > :not(summary) {
   --color-on-media: var(--gc-on-media);
   --shadow-elevated: var(--gc-elevated);
   --ease-gc: var(--gc-ease);
+}
+
+/* Logo wordmark "GRADIENT" only. Do not use for other text. */
+@utility brand-wordmark {
+  background-image: linear-gradient(90deg, var(--brand-from), var(--brand-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  @media (forced-colors: active) { background-image: none; color: CanvasText; }
 }
 
 @utility glass {

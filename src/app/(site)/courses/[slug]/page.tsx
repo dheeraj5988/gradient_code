@@ -66,7 +66,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
     "@type": "Course",
     name: course.title,
     description: course.subtitle ?? course.description,
-    provider: { "@type": "Organization", name: "Gradient Code", sameAs: process.env.NEXT_PUBLIC_SITE_URL },
+    provider: { "@type": "Organization", name: "Code Gradient", sameAs: process.env.NEXT_PUBLIC_SITE_URL },
     inLanguage: course.language,
     educationalLevel: course.level,
     offers: { "@type": "Offer", price: course.price, priceCurrency: "INR", category: course.price ? "Paid" : "Free" },

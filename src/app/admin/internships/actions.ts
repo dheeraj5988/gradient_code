@@ -33,7 +33,7 @@ export async function saveInternship(id: string | null, _prev: unknown, form: Fo
   const description = String(form.get("description") ?? "").trim();
   if (publish && description.length < 30) return { ok: false, error: "Add a description (at least 30 characters) before publishing.", fieldErrors: { description: "Too short to publish." } };
   const row = {
-    title, slug, mode, company: str(form, "company") || "Gradient Code", location: str(form, "location") || "Remote",
+    title, slug, mode, company: str(form, "company") || "Code Gradient", location: str(form, "location") || "Remote",
     duration_weeks: duration, stipend_min: smin, stipend_max: smax, openings, description,
     skills: lines(form, "skills"), responsibilities: lines(form, "responsibilities"), perks: lines(form, "perks"),
     required_course_id: course || null, apply_by: applyBy || null, is_published: publish,

@@ -8,7 +8,7 @@ export const DEMO_INSTRUCTORS: Instructor[] = [
   {
     id: "i-faculty",
     slug: "gradient-code-faculty",
-    name: "Gradient Code Faculty",
+    name: "Code Gradient Faculty",
     headline: "Industry engineers & data scientists",
     bio: "Our faculty are working engineers who build production software, data pipelines and ML systems. Every course is project-first: you ship real work, not just watch videos.",
     avatar_url: null,
@@ -27,7 +27,7 @@ export const DEMO_INSTRUCTORS: Instructor[] = [
   },
 ];
 
-const faculty = { slug: "gradient-code-faculty", name: "Gradient Code Faculty", headline: "Industry engineers & data scientists", avatar_url: null };
+const faculty = { slug: "gradient-code-faculty", name: "Code Gradient Faculty", headline: "Industry engineers & data scientists", avatar_url: null };
 const himanshu = { slug: "himanshu-rana", name: "Himanshu Rana", headline: "Cloud Solutions Architect · MCT", avatar_url: null };
 
 const base = {
@@ -212,14 +212,14 @@ export const DEMO_INTERNSHIPS: Internship[] = [
     id: "in-1",
     slug: "full-stack-developer-intern",
     title: "Full Stack Developer Intern",
-    company: "Gradient Code",
+    company: "Code Gradient",
     location: "Remote",
     mode: "Remote",
     duration_weeks: 8,
     stipend_min: 5000,
     stipend_max: 10000,
     skills: ["React", "Node.js", "PostgreSQL"],
-    description: "Work on real features for the Gradient Code platform with mentor code reviews every week.",
+    description: "Work on real features for the Code Gradient platform with mentor code reviews every week.",
     responsibilities: ["Build UI features in React", "Write API endpoints", "Participate in code reviews"],
     perks: ["Certificate", "Letter of recommendation", "Flexible hours"],
     openings: 4,
@@ -231,7 +231,7 @@ export const DEMO_INTERNSHIPS: Internship[] = [
     id: "in-2",
     slug: "data-science-intern",
     title: "Data Science Intern",
-    company: "Gradient Code",
+    company: "Code Gradient",
     location: "Remote",
     mode: "Remote",
     duration_weeks: 12,
@@ -250,7 +250,7 @@ export const DEMO_INTERNSHIPS: Internship[] = [
     id: "in-3",
     slug: "genai-engineer-intern",
     title: "Generative AI Engineer Intern",
-    company: "Gradient Code",
+    company: "Code Gradient",
     location: "Hybrid · Delhi NCR",
     mode: "Hybrid",
     duration_weeks: 8,

@@ -67,7 +67,7 @@ export default async function InternshipDetail({ params }: { params: Params }) {
             {i.required_course_slug ? (
               <p className="text-sm text-muted-foreground">Complete the <Link href={`/courses/${i.required_course_slug}`} className="font-medium text-primary hover:underline">linked course</Link> and its certificate requirements to become eligible.</p>
             ) : (
-              <p className="text-sm text-muted-foreground">Open to all Gradient Code learners.</p>
+              <p className="text-sm text-muted-foreground">Open to all Code Gradient learners.</p>
             )}
             {i.apply_by ? <p className="text-sm">Apply by <strong>{new Date(i.apply_by).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</strong></p> : null}
             {IS_DEMO ? <p className="text-sm text-muted-foreground">Applications open once the site is connected to its database.</p>

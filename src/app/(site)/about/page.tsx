@@ -9,9 +9,9 @@ export default function AboutPage() {
     <div className="container-page py-8 sm:py-10">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "About" }]} />
       <div className="mt-4 max-w-3xl">
-        <h1 className="text-3xl font-bold sm:text-4xl">About Gradient Code</h1>
+        <h1 className="text-3xl font-bold sm:text-4xl">About Code Gradient</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Gradient Code is a practical learning platform for students and early-career developers. We focus on skills you can demonstrate — through projects, assessments and real-world experience — not just videos watched.
+          Code Gradient is a practical learning platform for students and early-career developers. We focus on skills you can demonstrate — through projects, assessments and real-world experience — not just videos watched.
         </p>
         <h2 className="mt-10 text-xl font-bold">How we teach</h2>
         <ol className="mt-4 space-y-3">

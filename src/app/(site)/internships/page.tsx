@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Internships",
-  description: "Mentored internships for Gradient Code learners — remote, hybrid and on-site.",
+  description: "Mentored internships for Code Gradient learners — remote, hybrid and on-site.",
   alternates: { canonical: "/internships" },
 };
 

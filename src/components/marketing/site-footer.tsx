@@ -30,7 +30,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-border">
-        <div className="container-page py-5 text-xs text-muted-foreground">© {new Date().getFullYear()} Gradient Code. All rights reserved.</div>
+        <div className="container-page py-5 text-xs text-muted-foreground">© {new Date().getFullYear()} Code Gradient. All rights reserved.</div>
       </div>
     </footer>
   );
